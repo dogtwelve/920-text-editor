@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+    <HorizontalScrollView android:layout_width="fill_parent" android:id="@+id/horizontalScrollView1" android:layout_height="wrap_content">
+        <LinearLayout android:layout_width="fill_parent" android:layout_height="fill_parent" android:orientation="horizontal" android:id="@+id/pathButtons"></LinearLayout>
+    </HorizontalScrollView>
+    <ListView android:fastScrollEnabled="true" android:focusable="true" android:focusableInTouchMode="true" android:layout_height="wrap_content" android:layout_width="fill_parent" android:scrollbars="vertical" android:id="@+id/android:list" android:layout_weight="1"></ListView>
+    <LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/filenameLinearLayout">
+        <EditText android:layout_weight="1" android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/editTextFilename"></EditText>
+        <Button android:text="@string/save" android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/btnSave"></Button>
+    </LinearLayout>
+
+</LinearLayout>

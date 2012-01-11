@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Width of the fastscroll thumb -->
+    <dimen name="fastscroll_thumb_width">64dp</dimen>
+    <!-- Height of the fastscroll thumb -->
+    <dimen name="fastscroll_thumb_height">52dp</dimen>
+    <!-- toobar -->
+    <dimen name="toolbar_height">36dip</dimen>
+    <dimen name="toolbar_button_wh">32dip</dimen>
+    <dimen name="toolbar_button_4">4dip</dimen>
+</resources>
