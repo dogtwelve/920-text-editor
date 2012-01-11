@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">920 Text Editor</string>
+    <string name="open">Open</string>
+    <string name="select_file">Select a file</string>
+    <string name="confirm_exit">Are you confirm exit?</string>
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="cancel">Cancel</string>
+    <string name="encoding">Encoding</string>
+    <string name="save_succ">Save success!</string>
+    <string name="confirm_save">The current document has been modified, save changes?</string>
+    <string name="save_changes">Save changes?</string>
+    <string name="save">Save</string>
+    <string name="filename_is_empty">File name can not be empty!</string>
+    <string name="new_filename">Untitled</string>
+    <string name="highlight">Highlight</string>
+    <string name="search_replace">Search/Replace</string>
+    <string name="options">Options</string>
+    <string name="preferences">Preferences</string>
+    <string name="saveas">Save As</string>
+    <string name="reopen">Recent Files</string>
+    <string name="history">Recent files...</string>
+    <string name="file_not_exists">File does not exist!</string>
+    <string name="replace">Replace</string>
+    <string name="replace_all">All</string>
+    <string name="spinner_message">Processing</string>
+    <string name="searching">Searching...Please wait!</string>
+    <string name="not_found">Not found!</string>
+    <string name="replace_finish">Replace finish!</string>
+    <string name="font">Font</string>
+    <string name="font_size">Font Size</string>
+    <!-- 查看设置 -->
+    <string name="view">View</string>
+    <string name="word_wrap">Word wrap</string>
+    <string name="show_line_num">Show linenumbers</string>
+    <string name="show_tab">Show Tab/Linebreak</string>
+    <string name="screen_orientation">Screen Orientation</string>
+    <string name="screen_orientation_auto">Auto Rotate</string>
+    <string name="screen_orientation_portrait">Portrait</string>
+    <string name="screen_orientation_landscape">Landscape</string>
+    <!-- 高亮设置 -->
+    <string name="enable_highlight">Syntax highlighting</string>
+    <string name="highlight_limit">Highlight the file size limit</string>
+    <string name="highlight_limit_message">When you open the file size is greater than it is to stop highlighting; Unit: kb</string>
+    <string name="request_restart">* Request restart</string>
+    
+    <!-- about activity -->
+    <string name="label_version">Version</string>
+    <string name="label_author">Author</string>
+    <string name="label_email">Email</string>
+    <string name="label_homepage">Homepage</string>
+    <string name="label_license">License</string>
+    <string name="field_license">
+Copyright (C) 2011-2012  Jecelyin Peng\n
+920 Text Editor is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.\n
+920 Text Editor is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.\n
+You should have received a copy of the GNU General Public License along with this program; if not, see http://www.gnu.org/licenses.
+    </string>
+    <string name="about">About</string>
+    <string name="myname">Jecelyin</string>
+    <string name="myemail">jecelyin@gmail.com</string>
+    <string name="myhomepage">http://www.jecelyin.com/</string>
+    <string name="loading">Loading...</string>
+    <string name="highlight_stop_msg">File size exceeds the "highlight file size limit", highlighting has stopped</string>
+    <!-- 搜索设置 -->
+    <string name="search">Search</string>
+    <string name="search_regex">Regular Expression</string>
+    <string name="search_ignore_case">Ignore Case</string>
+    <string name="search_error">Search keyword error, you may use regular expressions but did not open it in the setting options</string>
+    <!-- 其它设置 -->
+    <string name="Other">Other</string>
+    <string name="open_last_file">Remember last file</string>
+    <string name="open_last_file_summary">When you start the editor, automatically open the last opened file.</string>
+    <string name="hide_soft_keyboard">Hide Soft Keyboard(Input Method)</string>
+    <string name="hide_soft_keyboard_summary">You can long press the edit area after the pop-up menu to open it\n* Request restart</string>
+    <string name="auto_indent">Auto Indent</string>
+    <string name="clear_history">Clear History</string>
+    <string name="clear_history_ok">History has been cleared.</string>
+    <string name="exit">Exit</string>
+    <string name="keep_screen_on_summary">keep the screen on while visible</string>
+    <string name="keep_screen_on">Keep Screen on</string>
+    <string name="help">Help</string>
+    <string name="donate">Donate...</string>
+    <!-- 菜单 -->
+    <string name="show_ime">Show Input Method</string>
+    <string name="to_lower">Convert to lowercase</string>
+    <string name="to_upper">Convert to uppercase</string>
+    <string name="out_of_memory">Open file failed, not enough memory!</string>
+    <string name="exception">Exception occurs, execution fails!</string>
+    <string name="back_button_exit">Press the \"Back button\" to exit</string>
+    <string name="pref_sort_clicks">Sort by clicks</string>
+    <string name="toolbar_rows">Toolbar rows</string>
+    <string name="preview_msg">Must be saved before preview</string>
+    <string name="goto_line">Go to Line...</string>
+    <string name="can_not_gotoline">Can not jump to the specified line</string>
+    <string name="have_not_saved_doc">You have not saved the document!</string>
+    <string name="get_root_title">get ROOT permission</string>
+    <string name="open_with">Open with...</string>
+    <string name="rename">Rename...</string>
+    <string name="delete">Delete...</string>
+    <string name="qq_group">QQ Group</string>
+    <string name="rename_failed">Rename failed!</string>
+    <string name="confirm_delete">Confirm delete the file?</string>
+    <string name="save_failed">Save failed!</string>
+    <string name="can_not_create_temp_path">Can not create temporary directory, please check your SDCard!</string>
+    <string name="donate_summary">Use the browser to open donate page</string>
+    <string name="get_root_summary">*You may need to use other tools to mount the partition as rw</string>
+    <string name="volume_up_toolbar_msg">Toolbar has been hidden, you can press the "volume down key" to display it</string>
+    <string name="volume_up_fullscreen_msg">Have switched to fullscreen mode, you can press the "Volume Down key" to switch to normal mode</string>
+    <string name="autosave">Auto Save</string>
+    <string name="autosave_summery">When the editor is not currently active window will be automatically saved</string>
+    <string name="has_autosave">The current document is automatically saved</string>
+    <string name="overwrite_confirm">The file already exists, you are sure to overwrite it?</string>
+    <string name="use_custom_hl_color">Use a custom highlight color</string>
+    <string name="use_custom_hl_color_msg">Disabled will use the system default color scheme</string>
+    <string name="custom_hl_color">Custom Highlight Color</string>
+    <string name="string_color">String color</string>
+    <string name="keyword_color">Keyword color</string>
+    <string name="comment_color">Comment color</string>
+    <string name="tag_color">Tag color (e.g. &lt;?php)</string>
+    <string name="function_color">Function color</string>
+    <string name="attr_color">Attribute name color</string>
+    <string name="current_color">Current color: </string>
+    <string name="invalid_color">Invalid color value</string>
+    <string name="insert_color">Insert a color</string>
+    <string name="font_color">Font color</string>
+    <string name="backgroup_color">Backgroup color</string>
+    <string name="can_not_create_synfile">Can not extract the syntax file, please check your SD card has enough space!</string>
+    <string name="can_not_list_file">Can not read the file list, try to open / close ROOT privileges in the "Preferences" menu</string>
+    <string name="go_to_begin">Go to begin</string>
+    <string name="go_to_end">Go to end</string>
+    <string name="not_need_back">Do not need to back to last edit location</string>
+    <string name="not_need_forward">Do not need to forward to next edit location</string>
+    <string name="report_bug">Report Bug</string>
+    <string name="project_homepage">Project home on Google code</string>
+</resources>

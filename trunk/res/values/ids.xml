@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="show_ime" type="id"></item>
+    <item name="to_lower" type="id"></item>
+    <item name="to_upper" type="id"></item>
+    <item name="goto_line" type="id"></item>
+    <item name="home_notification" type="id"></item>
+    <item type="id" name="go_to_end"/>
+    <item type="id" name="go_to_begin"/>
+    
+</resources>
