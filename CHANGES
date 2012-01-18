@@ -3,11 +3,14 @@ Changes with 12.1.18
 
     *) Change: highlight file size limit to max=400kb.
     *) Change: optimize the highlight rendering speed.
+    *) Change: add Spanish language support.
+    Thanks to Juan Cruz.
 
     *) Feature: large Icons toolbar.
     *) Feature: add "\" to symbol bar.
     *) Feature: add PowerShell syntax highlight.
-    
+
+    *) Bugfix: open the file automatically open the input method
     *) Bugfix: LICENSE fixed :-)
 
 
