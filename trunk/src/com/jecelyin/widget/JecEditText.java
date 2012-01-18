@@ -10,7 +10,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *   along with 920 Text Editor.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.jecelyin.widget;
@@ -20,9 +20,11 @@ import java.util.HashMap;
 
 import com.jecelyin.colorschemes.ColorScheme;
 import com.jecelyin.editor.JecEditor;
+import com.jecelyin.editor.R;
 import com.jecelyin.editor.UndoParcel;
 import com.jecelyin.editor.UndoParcel.OnUndoStatusChange;
 import com.jecelyin.editor.UndoParcel.TextChange;
+import com.jecelyin.highlight.Highlight;
 import com.jecelyin.util.TextUtil;
 
 import android.content.Context;
@@ -53,6 +55,7 @@ import android.view.ViewConfiguration;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.Scroller;
+import android.widget.Toast;
 
 public class JecEditText extends EditText
 {
@@ -74,7 +77,7 @@ public class JecEditText extends EditText
     private static Rect sTempRect = new Rect();
     private FastScroller mFastScroller;
     private Layout mLayout;
-    private CharSequence mText = null;
+    private Editable mText = null;
     private UndoParcel mUndoParcel = new UndoParcel(); // 撤销与重做缓存
     private UndoParcel mRedoParcel = new UndoParcel(); // 撤销与重做缓存
     private boolean mUndoRedo = false; // 是否撤销过
@@ -91,7 +94,6 @@ public class JecEditText extends EditText
     private final static String TAG = "JecEditText";
     private VelocityTracker mVelocityTracker;
     private FlingRunnable mFlingRunnable;
-    
 
     // we need this constructor for LayoutInflater
     public JecEditText(Context context, AttributeSet attrs)
@@ -123,6 +125,7 @@ public class JecEditText extends EditText
         setPadding(paddingLeft, paddingTop, paddingLeft, paddingTop);
         mFastScroller = new FastScroller(getContext(), this);
         addTextChangedListener(mUndoWatcher);
+        clearFocus();
     }
 
     private static class JecSaveState extends BaseSavedState
@@ -246,6 +249,7 @@ public class JecEditText extends EditText
             //Log.v(TAG, "isLoading:" + JecEditor.isLoading);
             if(JecEditor.isLoading)
                 return;
+            Highlight.redraw();
             //撤销，重做
             if(lastChange != null)
             {
@@ -409,20 +413,30 @@ public class JecEditText extends EditText
     {
         mShowWhiteSpace = b;
     }
+    
+    public void setText2(CharSequence text)
+    {
+        try {
+            super.setText(text);
+        } catch (OutOfMemoryError e) {
+            Toast.makeText(getContext(), R.string.out_of_memory, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, e.getMessage());
+        }
+    }
 
     @Override
     protected void onDraw(Canvas canvas)
     {
         mLayout = getLayout();
-        mText = getText();
-
+        mText = (Editable) getText();
+        super.onDraw(canvas);
+        
         drawView(canvas);
 
         if(mFastScroller != null)
         {
             mFastScroller.draw(canvas);
         }
-        super.onDraw(canvas);
 
     }
 
@@ -455,17 +469,15 @@ public class JecEditText extends EditText
         switch(event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
-                Log.v(TAG, "ACTION_DOWN1");
                 if(mFlingRunnable != null)
                 {
                     mFlingRunnable.endFling();
                     cancelLongPress();
-                    //Log.v(TAG, "ACTION_DOWN2");
                 }
 
                 break;
             case MotionEvent.ACTION_UP:
-                Log.v(TAG, "ACTION_UP1");
+                
                 int mMinimumVelocity = ViewConfiguration.get(getContext()).getScaledMinimumFlingVelocity();
                 int mMaximumVelocity = ViewConfiguration.get(getContext()).getScaledMaximumFlingVelocity();
                 mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
@@ -477,14 +489,11 @@ public class JecEditText extends EditText
                     {
                         mFlingRunnable = new FlingRunnable(getContext());
                     }
-
+                    Highlight.stop();
                     mFlingRunnable.start(this, -initialVelocity);
-                    //Log.v(TAG, "ACTION_UP1.5");
-                    //result = true;
                 }else
                 {
                     moveCursorToVisibleOffset();
-                    //Log.v(TAG, "ACTION_UP1.6");
                 }
 
                 if(mVelocityTracker != null)
@@ -492,7 +501,6 @@ public class JecEditText extends EditText
                     mVelocityTracker.recycle();
                     mVelocityTracker = null;
                 }
-                //Log.v(TAG, "ACTION_UP2");
                 
                 break;
         }
@@ -554,7 +562,7 @@ public class JecEditText extends EditText
             {
                 mWidget.removeCallbacks(this);
                 mWidget.moveCursorToVisibleOffset();
-
+                
                 mWidget = null;
             }
 
@@ -578,14 +586,24 @@ public class JecEditText extends EditText
 
                     Layout layout = mWidget.getLayout();
 
-                    int padding = mWidget.getTotalPaddingTop() + mWidget.getTotalPaddingBottom();
+                    int padding;
+                    try {
+                        padding = mWidget.getTotalPaddingTop() + mWidget.getTotalPaddingBottom();
+                    } catch(Exception e) {
+                        padding = 0;
+                    }
+                    
 
                     y = Math.min(y, layout.getHeight() - (mWidget.getHeight() - padding));
                     y = Math.max(y, 0);
 
                     Touch.scrollTo(mWidget, layout, x, y);
                     int delta = mLastFlingY - y;
-
+                    //Log.d(TAG, "delta:"+delta);
+                    if(Math.abs(delta) <= 5)
+                    {
+                        Highlight.redraw();
+                    }
                     if(more && delta != 0)
                     {
                         mWidget.invalidate();
@@ -654,11 +672,6 @@ public class JecEditText extends EditText
     {
         int dtop, dbottom;
 
-        if(!mShowLineNum && !mShowWhiteSpace)
-        {
-            return;
-        }
-
         synchronized (sTempRect)
         {
             if(!c.getClipBounds(sTempRect))
@@ -671,6 +684,7 @@ public class JecEditText extends EditText
         }
         if(mLayout == null)
             return;
+
         int textLength = mText.length();
 
         int top = 0;
@@ -695,7 +709,17 @@ public class JecEditText extends EditText
         TextPaint paint = mTextPaint;
 
         ParagraphStyle[] spans = NO_PARA_SPANS;
+        
+        //Log.d("Highlight", first+"-"+last+"="+dtop+":"+dbottom);
+        //这里不要使用getScrollY，因为修改时，光标会变，滚动条不会变，但是高亮需要变
+        int previousLineEnd2 = mLayout.getLineStart(first >= 3 ? first-3 : 0);
+        Highlight.render(mText, previousLineEnd2,  mLayout.getLineStart(last+3 > lineCount ? lineCount : last+3));
 
+        if(!mShowLineNum && !mShowWhiteSpace)
+        {
+            return;
+        }
+        
         // 显示行数
         int lastline = lineCount < 1 ? 1 : lineCount;
         if(lastline != mLineNumber)
@@ -706,16 +730,15 @@ public class JecEditText extends EditText
         int right = getWidth();
         int left = getPaddingLeft();
         // 真实行数
-        int curVisibleLineEnd = mLayout.getLineStart(first);
-        if(curVisibleLineEnd > 1)
+        if(previousLineEnd > 1)
         {
-            if(curVisibleLineEnd >= mText.length())
+            if(previousLineEnd >= mText.length())
                 return;
-            realLineNum = TextUtil.countMatches(mText, '\n', 0, curVisibleLineEnd);
+            realLineNum = TextUtil.countMatches(mText, '\n', 0, previousLineEnd);
             // Log.v("edittext",
             // "curVisibleLineEnd:"+curVisibleLineEnd+" realLineNum:"+realLineNum);
             // 如果当前行是新行，则需要+1
-            if(mText.charAt(curVisibleLineEnd) != '\n')
+            if(mText.charAt(previousLineEnd) != '\n')
             {
                 realLineNum++;
             }
@@ -742,6 +765,7 @@ public class JecEditText extends EditText
             }
             return;
         }
+
         // Next draw the lines, one at a time.
         // the baseline is the top of the following line minus the current
         // line's descent.

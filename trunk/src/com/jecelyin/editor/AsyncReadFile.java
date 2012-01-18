@@ -10,7 +10,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *   along with 920 Text Editor.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.jecelyin.editor;
@@ -103,10 +103,11 @@ public class AsyncReadFile
                 return;
             TimerUtil.start();
             //mJecEditor.text_content.setText("");
-            mJecEditor.text_content.setText(mData);
+            mJecEditor.text_content.setText2(mData);
             TimerUtil.stop(TAG+"1");
             // scroll to top
             mJecEditor.text_content.setSelection(0, 0);
+            mJecEditor.text_content.clearFocus();
             //mJecEditor.text_content.invalidate();
             mJecEditor.current_encoding_tmp = encoding;
 

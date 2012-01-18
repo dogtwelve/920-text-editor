@@ -10,7 +10,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *   along with 920 Text Editor.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.jecelyin.editor;
@@ -48,7 +48,6 @@ public class LangList
         public void onClick(DialogInterface dialog, int which)
         {
             final String[] lang = list.get(which);
-            mJecEditor.removeHighlight();
             mJecEditor.doHighlight(lang[1]);
         }
         

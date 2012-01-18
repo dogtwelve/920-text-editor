@@ -129,5 +129,5 @@
     <string name="not_need_back">不需要返回上一个编辑位置</string>
     <string name="not_need_forward">不需要返回下一个编辑位置</string>
     <string name="report_bug">报告问题</string>
-    <string name="project_homepage">本编辑器开源首页</string>
+    <string name="project_homepage">帮助改进编辑器</string>
 </resources>

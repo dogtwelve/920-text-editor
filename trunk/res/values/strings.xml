@@ -134,5 +134,5 @@ You should have received a copy of the GNU General Public License along with thi
     <string name="not_need_back">Do not need to back to last edit location</string>
     <string name="not_need_forward">Do not need to forward to next edit location</string>
     <string name="report_bug">Report Bug</string>
-    <string name="project_homepage">Project home on Google code</string>
+    <string name="project_homepage">Help improve the editor</string>
 </resources>

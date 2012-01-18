@@ -58,6 +58,8 @@ typedef unsigned char char_u;
 #define STRNCPY(d, s, n)    strncpy((char *)(d), (char *)(s), (size_t)(n))
 #define STRCMP(d, s)	    strcmp((char *)(d), (char *)(s))
 #define STRNCMP(d, s, n)    strncmp((char *)(d), (char *)(s), (size_t)(n))
+#define STRCASECMP(d, s)    strcasecmp((char *)(d), (char *)(s))
+#define STRNCASECMP(d, s, n)    strncasecmp((char *)(d), (char *)(s), (size_t)(n))
 
 #include "structs.h"
 #include "hashtab.h"

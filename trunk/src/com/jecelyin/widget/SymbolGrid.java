@@ -10,7 +10,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *   along with 920 Text Editor.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.jecelyin.widget;
@@ -112,6 +112,7 @@ public class SymbolGrid extends LinearLayout
         mButtons.add(buildToolbarButton(R.drawable.tool_sl_brack1, "(", "tool_sl_brack"));
         mButtons.add(buildToolbarButton(R.drawable.tool_sr_brack1, ")", "tool_sr_brack"));
         mButtons.add(buildToolbarButton(R.drawable.tool_slash1, "/", "tool_slash"));
+        mButtons.add(buildToolbarButton(R.drawable.tool_escape1, "\\", "tool_escape"));
         mButtons.add(buildToolbarButton(R.drawable.tool_single_quotes1, "'", "tool_single_quotes"));
         mButtons.add(buildToolbarButton(R.drawable.tool_percent1, "%", "tool_percent"));
         mButtons.add(buildToolbarButton(R.drawable.tool_opn_brack1, "[", "tool_opn_brack"));

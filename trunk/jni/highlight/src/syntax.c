@@ -158,7 +158,7 @@ static int match_region(char *text, char *skip, char *endMatch, char *memMatch, 
 static int add_match_result(int group_id, int offset_start, int offset_end);
 char *highlight_link(char *charP);
 static int add_tag_group(char *name);
-static int match_text(char **cmp1, char **cmp2, char *memMatch);
+static int match_text(char **cmp1, char **cmp2, char *memMatch, int case_match);
 static void clear_current_state();
 static void clear_keyword_table(hashtab_T *ht);
 static void syntax_clear(buf_T *buf);
@@ -166,6 +166,7 @@ static void free_highlight();
 void load_syntax_conf(const char *confFile);
 static char *syn_cmd_include(char *charP, const char*confFile);
 static void syn_cmd_match(char *charP);
+static int get_offset_end();
 
 /**
  * 开始实现具体内容
@@ -454,7 +455,9 @@ void parse_file(char* fileText)
 
         int inc = TRUE;
         int len;
+        int epLen;
         int start_offset;
+        int othercmp;
 
         char *splitMatch;
         splitMatch = malloc(sizeof(char) * MAX_SPLIT_MATCH_LENGTH);
@@ -472,6 +475,7 @@ void parse_file(char* fileText)
                 //len = STRLEN(tag[idx]->start_pattern);
                 //if (STRNCMP(tag[idx]->start_pattern, text, len) == 0)
                 len = 0;
+                //ignore case
                 if(match_region(text, tag[idx]->start_pattern, splitMatch, NUL, &len) == TRUE)
                 {
                     text += len;
@@ -482,18 +486,38 @@ void parse_file(char* fileText)
                     {
                         add_match_result(tag_toid[idx], start_offset, curbuf->cur_offset);
                     }
-                    //扫描tag代码块
-                    text = scan_syntax(text, tag[idx]->end_pattern);
-                    len = STRLEN(tag[idx]->end_pattern);
-                    if (STRNCMP(tag[idx]->end_pattern, text, len) == 0)
+
+                    epLen = STRLEN(tag[idx]->end_pattern);
+                    othercmp = STRCMP(tag[idx]->tag_pattern, "other");
+                    if(othercmp == 0)
+                    {//处理像asp,html 的注释<!-- -->在非代码块中的情况
+                        while(*text != NUL && STRNCMP(tag[idx]->end_pattern, text, epLen) != 0)
+                        {
+                            len = utfc_ptr2len(text);
+                            text += len;
+                            //一个中文字符长度为1,不然java处理会出错
+                            curbuf->cur_offset++;
+                        }
+                    }else{
+                        //扫描tag代码块
+                        text = scan_syntax(text, tag[idx]->end_pattern);
+                    }
+
+                    //*text == NUL 匹配<!--后不找到-->的情况
+                    //<style type="text/cs 处理因为 < 匹配到最后的情况
+                    //curbuf->cur_offset-1是因为有些地方add_match_result后会cur_offset++
+                    if (*text == NUL && othercmp == 0 && get_offset_end() != (curbuf->cur_offset-1))
+                    {
+                    	add_match_result(tag_toid[idx], start_offset, curbuf->cur_offset);
+                    }else if (STRNCMP(tag[idx]->end_pattern, text, epLen) == 0)
                     {
                         if(tag_toid[idx] == GROUP_TAG_ID)
                         {
                             start_offset = curbuf->cur_offset;
                         }
-                        add_match_result(tag_toid[idx], start_offset, curbuf->cur_offset + len);
-                        curbuf->cur_offset += len;
-                        text += len;
+                        add_match_result(tag_toid[idx], start_offset, curbuf->cur_offset + epLen);
+                        curbuf->cur_offset += epLen;
+                        text += epLen;
                     }
                     inc = FALSE;
                     break;
@@ -726,7 +750,6 @@ char* scan_syntax(char *text, char *tagEnd)
                                 //继续while一次end
                                 continue;
                             }
-
                         }
                         else if (tagEnd != NUL && STRNCMP(tagEnd, text, STRLEN(tagEnd)) == 0)
                         {
@@ -741,6 +764,10 @@ char* scan_syntax(char *text, char *tagEnd)
                     if(inc_end == FALSE)
                     {
                         add_match_result(spp->from_id, curbuf->start_offset, curbuf->cur_offset);
+                    }else if(*text == NUL)
+                    {//*text == NUL预防过长的注释导致高亮不正常的问题
+                         add_match_result(spp->from_id, curbuf->start_offset, curbuf->cur_offset);
+                         goto LABEL_BREAK_PARSE;
                     }
                 } //endif (match_region(text, start, splitMatch, memMatch, &matchLen) == TRUE)
 
@@ -774,6 +801,17 @@ char* scan_syntax(char *text, char *tagEnd)
     _free(memMatch);
 
     return text;
+}
+
+static int get_offset_end()
+{
+    stateitem_T *cur_si;
+
+    if(current_state.ga_len < 1)
+    	return -1;
+	cur_si = &CUR_STATE(current_state.ga_len - 1);
+
+    return cur_si->offset_end;
 }
 
 static int add_match_result(int group_id, int offset_start, int offset_end)
@@ -853,7 +891,7 @@ static int match_region(char *text, char *syn, char *matchMem, char *memMatch, i
         cmp1 = pattern;
         cmp2 = text;
         retLen = 0;
-        //TODO: 需要处理C语言的 # if, \b, \s, 没有end结束符???, tag="keepend", tag有\z, 支持include, 支持end2(解决tr///)
+
         //处理start="<<<\z$" end="^\z;$"
         if (*cmp1 == '^')
         {
@@ -861,7 +899,8 @@ static int match_region(char *text, char *syn, char *matchMem, char *memMatch, i
             {
                 cmp1++;
                 //有可能返回-1，因为有\s*正则
-                tmpLen = match_text(&cmp1, &cmp2, memMatch);
+                //default ignoring case
+                tmpLen = match_text(&cmp1, &cmp2, memMatch, 2);
                 if (tmpLen == 0)
                     break;
                 if(tmpLen > 0)
@@ -890,8 +929,9 @@ static int match_region(char *text, char *syn, char *matchMem, char *memMatch, i
             }
             else
             {
+                //default ignoring case
                 //有可能返回-1，因为有\s*正则
-                tmpLen = match_text(&cmp1, &cmp2, memMatch);
+                tmpLen = match_text(&cmp1, &cmp2, memMatch, 2);
                 if (tmpLen == 0)
                     break;
                 if(tmpLen > 0)
@@ -914,7 +954,7 @@ static int match_region(char *text, char *syn, char *matchMem, char *memMatch, i
  * 返回匹配到文本的长度，一个中文字符长度为1
  * 返回-1为碰到\s*这样的正则
  */
-static int match_text(char **a, char **b, char *memMatch)
+static int match_text(char **a, char **b, char *memMatch, int case_match)
 {
     char *cmp1;
     char *cmp2;
@@ -1079,7 +1119,20 @@ static int match_text(char **a, char **b, char *memMatch)
         if(*cmp1 == '\\' && *(cmp1+1) == '$')
             cmp1++;
         //如果^后不是\z，则直接判断后面一个字符是否相等
-        if (*cmp1 == *cmp2)
+        int match = 0;
+        /*
+         * Try twice:
+         * 1. matching case
+         * 2. ignoring case
+         */
+        if(case_match == 1)
+        {
+            match = (*cmp1 == *cmp2);
+        }else{
+            match = (tolower(*cmp1) == tolower(*cmp2));
+        }
+
+        if(match)
         {
             cmp1++;
             cmp2++;
