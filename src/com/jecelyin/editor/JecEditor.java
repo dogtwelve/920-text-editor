@@ -10,7 +10,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *   along with 920 Text Editor.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.jecelyin.editor;
@@ -78,7 +78,7 @@ public class JecEditor extends Activity
     private final static int FILE_BROWSER_SAVEAS_CODE = 1; // 另存为
     private final static String TAG = "JecEditor";
     public final static String PREF_HISTORY = "history"; // 保存打开文件记录
-    private final static String SYNTAX_SIGN = "5";
+    private final static String SYNTAX_SIGN = "8";
     public static String version = "";
     public static String TEMP_PATH = "";
     public JecEditText text_content;
@@ -89,6 +89,7 @@ public class JecEditor extends Activity
     private String current_path_tmp = ""; // 当前打开的文件路径
     private String current_ext_tmp = ""; // 当前扩展名
     private String current_ext = ""; // 当前扩展名
+    public int MAX_HIGHLIGHT_FILESIZE = 400;
     private int org_textcontent_md5 = 0;
     private boolean back_button_exit = true; // 按返回键退出程序
     private boolean autosave = false; // 是否自动保存
@@ -146,7 +147,7 @@ public class JecEditor extends Activity
             version = packageInfo.versionName;
         }catch (Exception e)
         {
-            
+
         }
         text_content = (JecEditText) findViewById(R.id.text_content);
         findLayout = (LinearLayout) findViewById(R.id.find_linearLayout);
@@ -158,22 +159,23 @@ public class JecEditor extends Activity
         toolbarbox_LinearLayout = (LinearLayout) findViewById(R.id.toolbarbox_LinearLayout);
         last_edit_back = (ImageButton) findViewById(R.id.last_edit_back);
         last_edit_forward = (ImageButton) findViewById(R.id.last_edit_forward);
-        undo_can_drawable = getResources().getDrawable(R.drawable.undo1);
-        undo_no_drawable = getResources().getDrawable(R.drawable.undo_no);
-        redo_can_drawable = getResources().getDrawable(R.drawable.redo1);
-        redo_no_drawable = getResources().getDrawable(R.drawable.redo_no);
-        //last edit button
-        last_edit_back_d = getResources().getDrawable(R.drawable.back_edit_location_d);
-        last_edit_back_s = getResources().getDrawable(R.drawable.back_edit_location_s);
-        last_edit_forward_d = getResources().getDrawable(R.drawable.forward_edit_location_d);
-        last_edit_forward_s = getResources().getDrawable(R.drawable.forward_edit_location_s);
+        undo_can_drawable = getResources().getDrawable(R.drawable.undo_sel2);
+        undo_no_drawable = getResources().getDrawable(R.drawable.undo_no2);
+        redo_can_drawable = getResources().getDrawable(R.drawable.redo_sel2);
+        redo_no_drawable = getResources().getDrawable(R.drawable.redo_no2);
+        // last edit button
+        last_edit_back_d = getResources().getDrawable(R.drawable.back_edit_location_d2);
+        last_edit_back_s = getResources().getDrawable(R.drawable.back_edit_location_s2);
+        last_edit_forward_d = getResources().getDrawable(R.drawable.forward_edit_location_d2);
+        last_edit_forward_s = getResources().getDrawable(R.drawable.forward_edit_location_s2);
         // 设置横屏时不全屏编辑
         findEditText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         replaceEditText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         // end
         mPref = PreferenceManager.getDefaultSharedPreferences(this);
         // mPref.edit().clear().commit();
-        showIME(!mPref.getBoolean("hide_soft_Keyboard", false));
+        if(mPref.getBoolean("hide_soft_Keyboard", false))
+            showIME(false);
         // 设置
         String screen_orientation = mPref.getString("screen_orientation", "auto");
         if("portrait".equals(screen_orientation))
@@ -185,28 +187,30 @@ public class JecEditor extends Activity
         }
         // 确保顺序没错
         mAsyncSearch = new AsyncSearch();
-        //最后编辑按钮事件
+        // 最后编辑按钮事件
         text_content.mOnLastEditChange = new Runnable() {
-            
+
             @Override
             public void run()
             {
                 if(text_content.isCanBackEditLocation())
                 {
                     last_edit_back.setImageDrawable(last_edit_back_s);
-                } else {
+                }else
+                {
                     last_edit_back.setImageDrawable(last_edit_back_d);
                 }
                 if(text_content.isCanForwardEditLocation())
                 {
                     last_edit_forward.setImageDrawable(last_edit_forward_s);
-                } else {
+                }else
+                {
                     last_edit_forward.setImageDrawable(last_edit_forward_d);
                 }
             }
         };
         last_edit_back.setOnClickListener(new OnClickListener() {
-            
+
             @Override
             public void onClick(View v)
             {
@@ -214,13 +218,14 @@ public class JecEditor extends Activity
                 {
                     text_content.gotoBackEditLocation();
                     text_content.mOnLastEditChange.run();
-                } else {
+                }else
+                {
                     Toast.makeText(JecEditor.this, R.string.not_need_back, Toast.LENGTH_LONG).show();
                 }
             }
         });
         last_edit_forward.setOnClickListener(new OnClickListener() {
-            
+
             @Override
             public void onClick(View v)
             {
@@ -228,27 +233,32 @@ public class JecEditor extends Activity
                 {
                     text_content.gotoForwardEditLocation();
                     text_content.mOnLastEditChange.run();
-                } else {
+                }else
+                {
                     Toast.makeText(JecEditor.this, R.string.not_need_forward, Toast.LENGTH_LONG).show();
                 }
             }
         });
 
         // 添加工具栏按钮
-        mSymbolGrid = (SymbolGrid)findViewById(R.id.symbolGrid1);//new SymbolGrid(this);
+        mSymbolGrid = (SymbolGrid) findViewById(R.id.symbolGrid1);// new
+                                                                  // SymbolGrid(this);
         mSymbolGrid.setClickListener(new OnSymbolClickListener() {
-            
+
             @Override
             public void OnClick(String symbol)
             {
                 insert_text(symbol);
             }
         });
-        
-        /*RelativeLayout mainLayout = (RelativeLayout)findViewById(R.id.mainLayout);
-        mainLayout.addView(mSymbolGrid);
-        mainLayout.bringChildToFront(mSymbolGrid);*/
-        //设置符号图标点击事件
+
+        /*
+         * RelativeLayout mainLayout =
+         * (RelativeLayout)findViewById(R.id.mainLayout);
+         * mainLayout.addView(mSymbolGrid);
+         * mainLayout.bringChildToFront(mSymbolGrid);
+         */
+        // 设置符号图标点击事件
         ImageButton symbolButton = (ImageButton) findViewById(R.id.symbol);
         symbolButton.setOnClickListener(new OnClickListener() {
 
@@ -266,15 +276,16 @@ public class JecEditor extends Activity
             if(Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
             {
                 TEMP_PATH = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/.920TextEditor";
-            } else {
+            }else
+            {
                 TEMP_PATH = getFilesDir().getAbsolutePath() + "/.920TextEditor";
             }
-            
+
             File temp = new File(TEMP_PATH);
             if(!temp.isDirectory() && !temp.mkdir())
             {
                 alert(R.string.can_not_create_temp_path);
-                //return;
+                // return;
             }
             // 解压语法文件
             String synfilestr = TEMP_PATH + "/version";
@@ -284,7 +295,7 @@ public class JecEditor extends Activity
                 if(!unpackSyntax())
                 {
                     alert(R.string.can_not_create_synfile);
-                    //return;
+                    // return;
                 }else
                 {
                     FileUtil.writeFile(synfilestr, SYNTAX_SIGN, "utf-8", false);
@@ -296,7 +307,7 @@ public class JecEditor extends Activity
                     if(!unpackSyntax())
                     {
                         alert(R.string.can_not_create_synfile);
-                        //return;
+                        // return;
                     }else
                     {
                         FileUtil.writeFile(synfilestr, SYNTAX_SIGN, "utf-8", false);
@@ -304,7 +315,7 @@ public class JecEditor extends Activity
                 }
             }
 
-            Highlight.loadLang();
+            Highlight.init();
 
         }catch (Exception e)
         {
@@ -332,9 +343,9 @@ public class JecEditor extends Activity
         // 监听设置选项改变
         // mPref.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
         setOrgTextContentMD5();
-        //TODO: test
-        //isRoot = true;
-        //openFileBrowser(FILE_BROWSER_OPEN_CODE, "");
+        // TODO: test
+        // isRoot = true;
+        // openFileBrowser(FILE_BROWSER_OPEN_CODE, "");
     }
 
     class ColorListener implements ColorPicker.OnColorChangedListener
@@ -359,7 +370,7 @@ public class JecEditor extends Activity
         {
             setTitle((new File(current_path)).getName() + "(" + current_path + ")");
         }
-        
+
     }
 
     @Override
@@ -414,7 +425,7 @@ public class JecEditor extends Activity
                 isRoot = false;
                 Toast.makeText(this, "Root Fail", Toast.LENGTH_LONG).show();
             }
-        } 
+        }
         autosave = mPref.getBoolean("autosave", false);
         text_content.setTypeface(Options.getFont(font));
         String font_size = mPref.getString("font_size", "14");
@@ -434,9 +445,10 @@ public class JecEditor extends Activity
         back_button_exit = mPref.getBoolean("back_button_exit", true);
 
         ColorScheme.set(mPref);
+        Highlight.loadColorScheme();
         text_content.setBackgroundColor(Color.parseColor(ColorScheme.color_backgroup));
         text_content.setTextColor(Color.parseColor(ColorScheme.color_font));
-        text_content.clearFocus();
+
         // text_content.invalidate();
         text_content.init();
     }
@@ -566,8 +578,6 @@ public class JecEditor extends Activity
      * (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
      * mNotificationManager.notify(R.id.home_notification, notification); }
      */
-
-    
 
     private void bindEvent()
     {
@@ -874,7 +884,7 @@ public class JecEditor extends Activity
                 @Override
                 public void run()
                 {
-                    text_content.setText("");
+                    text_content.setText2("");
                     setTitle(getString(R.string.new_filename));
                     setOrgTextContentMD5();
                     current_path = "";
@@ -984,9 +994,9 @@ public class JecEditor extends Activity
         doHighlight(current_ext);
     }
 
-    private boolean isCanHighlight()
+    private boolean isCanHighlight(String name)
     {
-        if(!mPref.getBoolean("enable_highlight", true))
+        if(!mPref.getBoolean("enable_highlight", true) || "".equals(name))
             return false;
         if("".equals(current_path))
             return true;
@@ -994,10 +1004,10 @@ public class JecEditor extends Activity
         long limitSize;
         try
         {
-            limitSize = Integer.valueOf(mPref.getString("highlight_limit", "70"));
+            limitSize = Integer.valueOf(mPref.getString("highlight_limit", Integer.toString(MAX_HIGHLIGHT_FILESIZE)));
         }catch (Exception e)
         {
-            limitSize = 70;
+            limitSize = MAX_HIGHLIGHT_FILESIZE;
             printException(e);
         }
         File f = new File(current_path);
@@ -1018,24 +1028,23 @@ public class JecEditor extends Activity
      */
     public void doHighlight(String ext)
     {
-        Editable text = text_content.getText();
-        if(text == null)
+        String name = Highlight.getNameByExt(ext);
+        if(!isCanHighlight(name))
             return;
-        if(!isCanHighlight())
-            return;
-
-        Highlight.parse(text, ext);
-        switchPreviewButton(Highlight.getNameByExt(ext));
+        
+        Highlight.setHighlightType(ext);
+        Highlight.redraw();
+        switchPreviewButton(name);
     }
 
-    public void removeHighlight()
+/*    public void removeHighlight()
     {
         Editable text = text_content.getText();
         text.clearSpans();
         // 重新设置文本，不然会产生无法滚动和光标不闪烁或光标不可见的问题
         text_content.setText(text);
         text_content.invalidate();
-    }
+    }*/
 
     /**
      * 解压语法配置文件
@@ -1054,7 +1063,7 @@ public class JecEditor extends Activity
             while ((ze = zin.getNextEntry()) != null)
             {
                 name = ze.getName();
-                //Log.v("Decompress", "Unzipping " + name);
+                // Log.v("Decompress", "Unzipping " + name);
 
                 if(ze.isDirectory())
                 {
@@ -1106,7 +1115,7 @@ public class JecEditor extends Activity
         try
         {
             byte[] bytes = text_content.getText().toString().getBytes(current_encoding);
-            text_content.setText(new String(bytes, encoding));
+            text_content.setText2(new String(bytes, encoding));
             current_encoding = encoding;
             doHighlight(current_ext);
         }catch (UnsupportedEncodingException e)

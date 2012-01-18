@@ -13,7 +13,7 @@
         </CheckBoxPreference>
 
         <EditTextPreference
-            android:defaultValue="70"
+            android:defaultValue="400"
             android:dialogMessage="@string/highlight_limit_message"
             android:dialogTitle="@string/highlight_limit"
             android:key="highlight_limit"

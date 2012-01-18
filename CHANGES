@@ -1,0 +1,13 @@
+
+Changes with 12.1.18
+
+    *) Change: highlight file size limit to max=400kb.
+    *) Change: optimize the highlight rendering speed.
+
+    *) Feature: large Icons toolbar.
+    *) Feature: add "\" to symbol bar.
+    *) Feature: add PowerShell syntax highlight.
+    
+    *) Bugfix: LICENSE fixed :-)
+
+

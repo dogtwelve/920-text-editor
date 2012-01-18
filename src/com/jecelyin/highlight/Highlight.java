@@ -10,7 +10,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ *   along with 920 Text Editor.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.jecelyin.highlight;
@@ -20,14 +20,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import android.graphics.Color;
+import android.text.Editable;
 import android.text.Spannable;
-import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 
 import com.jecelyin.colorschemes.ColorScheme;
 import com.jecelyin.editor.JecEditor;
 import com.jecelyin.util.FileUtil;
-import com.jecelyin.util.TimerUtil;
+import com.jecelyin.widget.ForegroundColorSpan;
 
 public class Highlight
 {
@@ -46,79 +46,147 @@ public class Highlight
     private final static String TAG = "Highlight";
     private static HashMap<String, String[]> langTab;
     private static ArrayList<String[]> nameTab;
+    private static int color_tag;
+    private static int color_string;
+    private static int color_keyword;
+    private static int color_function;
+    private static int color_comment;
+    private static int color_attr_name;
+    private static String mExt = "";
+    private static int mEndOffset = -1;
+    private static int mStartOffset = -1;
+    private static boolean mStop = true;
+    private static ArrayList<ForegroundColorSpan> mSpans = new ArrayList<ForegroundColorSpan>();
+    
+    public static void init()
+    {
+        loadLang();
+        loadColorScheme();
+    }
+    
+    public static void setHighlightType(String extension)
+    {
+        mExt = extension;
+    }
+    
+    public static void stop()
+    {
+        mStop = true;
+    }
+    
+    public static void redraw()
+    {
+        mStop = false;
+        mEndOffset = -1;
+        mStartOffset = -1;
+    }
     
     /**
      * 
-     * @param openedFile 要解析的文件，绝对路径
-     * @param ext 扩展名
+     * @param j 
+     * @param mLayout 
      * @return 返回[[高亮类型,开始offset, 结束offset],,]
      */
-    public static boolean parse(Spannable textSpannable, String ext)
+    public static boolean render(Editable mText, int startOffset, int endOffset)
     {
-        String[] lang = langTab.get(ext);
+        Log.d(TAG, startOffset+":"+endOffset);
+        if(mStop || "".equals(mExt))
+            return false;
+        
+        if(mStartOffset <= startOffset && mEndOffset >= endOffset)
+            return false;
+        String[] lang = langTab.get(mExt);
         if(lang == null)
         {
             return false;
         }
-        String text = textSpannable.toString();
-        TimerUtil.start();
+        //lock it 不然会因为添加了span后导致offset改变，不断地进行高亮
+        mStop = true;
+        //TimerUtil.start();
+        Log.d(TAG, startOffset+"="+endOffset);
+        
+        mStartOffset = startOffset;
+        mEndOffset = endOffset;
+        String text = mText.subSequence(0, endOffset).toString();
         int[] ret = jni_parse(text, JecEditor.TEMP_PATH + File.separator + lang[1]);
-        TimerUtil.stop("hg parse");
+        //TimerUtil.stop("hg parse");
         if(ret == null)
         {
+            mStop = false;
             return false;
         }
         int len = ret.length;
         if(len < 1 || len % 3.0F != 0)
         {
+            mStop = false;
             return false;
         }
-        //色彩模块
-        int color_tag            = Color.parseColor(ColorScheme.color_tag);
-        int color_string         = Color.parseColor(ColorScheme.color_string);
-        int color_keyword        = Color.parseColor(ColorScheme.color_keyword);
-        int color_function       = Color.parseColor(ColorScheme.color_function);
-        int color_comment        = Color.parseColor(ColorScheme.color_comment);
-        int color_attr_name      = Color.parseColor(ColorScheme.color_attr_name);
         
-        TimerUtil.start();
-        ForegroundColorSpan color;
+        //TimerUtil.start();
+        //不能清除全陪，因为滚动条需要一个span来按住拖动
+        //mText.clearSpans();
+        
+        int color;
         int start;
         int end;
+        int index=0;
+        int bufLen = mSpans.size();
+        ForegroundColorSpan fcs;
+        for(ForegroundColorSpan fcs2:mSpans)
+        {
+            mText.removeSpan(fcs2);
+        }
         for(int i=0; i<len; i++)
         {
             
             switch(ret[i])
             {
                 case GROUP_TAG_ID:
-                    color = new ForegroundColorSpan(color_tag);
+                    color = color_tag;
                     break;
                 case GROUP_STRING_ID:
-                    color = new ForegroundColorSpan(color_string);
+                    color = color_string;
                     break;
                 case GROUP_KEYWORD_ID:
-                    color = new ForegroundColorSpan(color_keyword);
+                    color = color_keyword;
                     break;
                 case GROUP_FUNCTION_ID:
-                    color = new ForegroundColorSpan(color_function);
+                    color = color_function;
                     break;
                 case GROUP_COMMENT_ID:
-                    color = new ForegroundColorSpan(color_comment);
+                    color = color_comment;
                     break;
                 case GROUP_ATTR_NAME_ID:
-                    color = new ForegroundColorSpan(color_attr_name);
+                    color = color_attr_name;
                     break;
                 default:
                     Log.v(TAG, "获取颜色group id失败");
+                    mStop = false;
                     return false;
             }
             
             start = ret[++i];
             end   = ret[++i];
-            textSpannable.setSpan(color, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            
+            if(end < startOffset)
+                continue;
+            
+            if(index >= bufLen)
+            {
+                fcs = new ForegroundColorSpan(color);
+                mSpans.add(fcs);
+            } else {
+                fcs = mSpans.get(index);
+                fcs.setColor(color);
+            }
+            
+            ++index;
+            mText.setSpan(fcs, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            
         }
         ret = null;
-        TimerUtil.stop("hg 1");
+        //TimerUtil.stop("hg 1");
+        mStop = false;
         return true;
     }
     
@@ -171,6 +239,17 @@ public class Highlight
         }
         
         return true;
+    }
+    
+    public static void loadColorScheme()
+    {
+        //色彩模块
+        color_tag            = Color.parseColor(ColorScheme.color_tag);
+        color_string         = Color.parseColor(ColorScheme.color_string);
+        color_keyword        = Color.parseColor(ColorScheme.color_keyword);
+        color_function       = Color.parseColor(ColorScheme.color_function);
+        color_comment        = Color.parseColor(ColorScheme.color_comment);
+        color_attr_name      = Color.parseColor(ColorScheme.color_attr_name);
     }
     
     public static String getNameByExt(String ext)

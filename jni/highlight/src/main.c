@@ -21,9 +21,9 @@ int main(void) {
 	int len=0;
 	char *fileText;
 
-	read_file2("/jecelyin/istudio/android/workspace/920-Text-Editor/build/test/art.tex", &fileText);
+	read_file2("/jecelyin/istudio/android/workspace/920-Text-Editor/build/test/file.php", &fileText);
 
-	read_syntax("/jecelyin/istudio/android/workspace/920-Text-Editor/build/syntax/tex.conf", (const char*)fileText, &len);
+	read_syntax("/jecelyin/istudio/android/workspace/920-Text-Editor/build/syntax/php.conf", (const char*)fileText, &len);
 	//printf("%i \n",len);
 	_free(fileText);
 

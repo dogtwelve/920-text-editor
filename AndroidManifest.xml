@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.jecelyin.editor"
-    android:versionCode="22"
-    android:versionName="12.1.11 (Open Source)" >
+    android:versionCode="23"
+    android:versionName="12.1.18" >
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" >
     </uses-permission>
