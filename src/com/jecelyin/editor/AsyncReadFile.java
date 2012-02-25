@@ -16,16 +16,14 @@
 package com.jecelyin.editor;
 
 import java.io.File;
-import java.io.FileInputStream;
 
-import org.mozilla.universalchardet.UniversalDetector;
-import org.mozilla.universalchardet.UniversalDetector.DetectorException;
+import org.mozilla.charsetdetector.CharsetDetector;
 
 import com.jecelyin.highlight.Highlight;
 import com.jecelyin.util.LinuxShell;
 import com.jecelyin.util.TimerUtil;
+import com.jecelyin.widget.JecEditText;
 
-import android.util.Log;
 import android.widget.Toast;
 
 public class AsyncReadFile
@@ -37,14 +35,16 @@ public class AsyncReadFile
     private String encoding = "";
     private String errorMsg = "";
     private static boolean isRoot = false;
+    private int lineBreak = 0;
     
-    public AsyncReadFile(JecEditor mJecEditor, String path)
+    public AsyncReadFile(JecEditor mJecEditor, String path, int lineBreak)
     {
         // 加载文件不算改动，不能有撤销操作
         JecEditor.isLoading = true;
-        mJecEditor.text_content.requestFocus();
+        //mJecEditor.text_content.requestFocus();
         this.mJecEditor = mJecEditor;
         this.path = path;
+        this.lineBreak = lineBreak;
         isRoot = JecEditor.isRoot;
         mData = "";
 
@@ -70,7 +70,13 @@ public class AsyncReadFile
             }
             encoding = getEncoding(fileString);
             mData = Highlight.readFile(fileString, encoding);
-
+            if(lineBreak == 2)
+            {//unix
+                mData = mData.replaceAll("\r\n|\r", "\n");
+            } else if(lineBreak == 3){
+                //CR Only(Macintosh)
+                mData = mData.replaceAll("\r\n|\r", "\r");
+            }
             if(root)
             {
                 LinuxShell.execute("rm -rf "+LinuxShell.getCmdPath(tempFile));
@@ -99,20 +105,19 @@ public class AsyncReadFile
             return;
         }
         try {
-            if(mData == null)
-                return;
             TimerUtil.start();
-            //mJecEditor.text_content.setText("");
-            mJecEditor.text_content.setText2(mData);
+            JecEditText mEditText = mJecEditor.getEditText();
+            mEditText.setText2(mData);
+            mData = null;
+            mEditText.setTextFinger();
             TimerUtil.stop(TAG+"1");
             // scroll to top
-            mJecEditor.text_content.setSelection(0, 0);
-            mJecEditor.text_content.clearFocus();
+            mEditText.setSelection(0, 0);
+            mEditText.clearFocus();
             //mJecEditor.text_content.invalidate();
-            mJecEditor.current_encoding_tmp = encoding;
-
+            mEditText.setEncoding(encoding);
+            mEditText.setPath(path);
             mJecEditor.onLoaded();
-
             JecEditor.isLoading = false;
         } catch (OutOfMemoryError e) {
             Toast.makeText(mJecEditor, R.string.out_of_memory, Toast.LENGTH_LONG).show();
@@ -123,7 +128,7 @@ public class AsyncReadFile
     
     private String getEncoding(String path)
     {
-        byte[] buf = new byte[4096];
+        /*byte[] buf = new byte[4096];
         FileInputStream fis;
         try
         {
@@ -160,9 +165,11 @@ public class AsyncReadFile
         detector.dataEnd();
         String encoding = detector.getCharset();
         detector.reset();
-        detector.destroy();
-        Log.v(TAG, "encoding: "+encoding);
-        if (encoding == null)
+        detector.destroy();*/
+        
+        String encoding = CharsetDetector.getEncoding(path);
+        
+        if ("".equals(encoding))
         {
             // 默认为utf-8
             encoding = "UTF-8";

@@ -131,8 +131,8 @@ Debería haber recibido una copia de la Licencia Pública General de GNU junto c
     <string name="can_not_list_file">No se puede leer la lista de archivos, intente habilitar / deshabilitar los privilegios de root en el menú "Preferencias"</string>
     <string name="go_to_begin">Ir al comienzo</string>
     <string name="go_to_end">Ir al final</string>
-    <string name="not_need_back">No es necesario volver a la última ubicación editada</string>
-    <string name="not_need_forward">No es necesario avanzar a la próxima ubicación editada</string>
+    <string name="not_need_back">No es posible retroceder a la anterior posición editada</string>
+    <string name="not_need_forward">No es posible avanzar a la siguiente posición editada</string>
     <string name="report_bug">Reportar errores</string>
     <string name="project_homepage">Ayude a mejorar el editor</string>
 </resources>

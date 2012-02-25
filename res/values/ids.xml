@@ -7,5 +7,6 @@
     <item name="home_notification" type="id"></item>
     <item type="id" name="go_to_end"/>
     <item type="id" name="go_to_begin"/>
+    <item name="hide_ime" type="id"/>
     
 </resources>

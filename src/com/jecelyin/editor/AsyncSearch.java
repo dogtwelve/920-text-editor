@@ -40,10 +40,10 @@ public class AsyncSearch
     public void search(String pattern, boolean next, JecEditor mJecEditor)
     {
         replaceAll = false;
-        mJecEditor.text_content.requestFocus();
+        mJecEditor.getEditText().requestFocus();
         this.mJecEditor = mJecEditor;
         this.next = next;
-        this.start = next ? mJecEditor.text_content.getSelectionEnd() : mJecEditor.text_content.getSelectionStart(); //光标位置
+        this.start = next ? mJecEditor.getEditText().getSelectionEnd() : mJecEditor.getEditText().getSelectionStart(); //光标位置
         this.mPattern = !regexp ? escapeMetaChar(pattern) : pattern;
         mData.clear();
         SearchTask mSearchTask = new SearchTask();
@@ -65,7 +65,7 @@ public class AsyncSearch
         if(mData.size() == 0)
             return;
         int[] ret = mData.get(0);
-        mJecEditor.text_content.getText().replace(ret[0], ret[1], (CharSequence)word);
+        mJecEditor.getEditText().getText().replace(ret[0], ret[1], (CharSequence)word);
     }
     
     public void replaceAll(String searchText, String replaceText, JecEditor mJecEditor)
@@ -94,7 +94,7 @@ public class AsyncSearch
             }
             Toast.makeText(mJecEditor.getApplicationContext(), mJecEditor.getText(resid), Toast.LENGTH_LONG).show();
         } else if(replaceAll) {
-            Editable mText = mJecEditor.text_content.getText();
+            Editable mText = mJecEditor.getEditText().getText();
             //一定要从后面开始替换,不然会有问题
             int end = data.size();
             int[] ret;
@@ -113,10 +113,10 @@ public class AsyncSearch
             } else {
                 mJecEditor.text_content.setSelection(ret[0], end);
             }*/
-            mJecEditor.text_content.setSelection(ret[0], ret[1]);
-            int x = mJecEditor.text_content.getScrollX();
-            int y = mJecEditor.text_content.getScrollY();
-            mJecEditor.text_content.scrollBy(x, y+40);
+            mJecEditor.getEditText().setSelection(ret[0], ret[1]);
+            int x = mJecEditor.getEditText().getScrollX();
+            int y = mJecEditor.getEditText().getScrollY();
+            mJecEditor.getEditText().scrollBy(x, y+40);
         }
     }
     
@@ -178,7 +178,7 @@ public class AsyncSearch
                     pattern = Pattern.compile(mPattern);
                 }
                 
-                Matcher m = pattern.matcher( mJecEditor.getText() );
+                Matcher m = pattern.matcher( mJecEditor.getEditText().getString() );
                 
                 if(replaceAll)
                 {

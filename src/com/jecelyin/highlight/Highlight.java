@@ -52,10 +52,12 @@ public class Highlight
     private static int color_function;
     private static int color_comment;
     private static int color_attr_name;
-    private static String mExt = "";
-    private static int mEndOffset = -1;
-    private static int mStartOffset = -1;
-    private static boolean mStop = true;
+    private String mExt = "";
+    private int mEndOffset = -1;
+    private int mStartOffset = -1;
+    private boolean mStop = true;
+    private static boolean mEnabled = true; //是否开启语法高亮
+    private static int mLimitFileSize = 0; //单位：KB
     private static ArrayList<ForegroundColorSpan> mSpans = new ArrayList<ForegroundColorSpan>();
     
     public static void init()
@@ -64,21 +66,36 @@ public class Highlight
         loadColorScheme();
     }
     
-    public static void setHighlightType(String extension)
+    public void setSyntaxType(String file_extension)
     {
-        mExt = extension;
+        this.mExt = file_extension;
     }
     
-    public static void stop()
+    public void stop()
     {
-        mStop = true;
+        this.mStop = true;
     }
     
-    public static void redraw()
+    public static void setLimitFileSize(int kb)
     {
-        mStop = false;
-        mEndOffset = -1;
-        mStartOffset = -1;
+        mLimitFileSize = kb;
+    }
+    
+    public static int getLimitFileSize()
+    {
+        return mLimitFileSize;
+    }
+    
+    public static void setEnabled(boolean enabled)
+    {
+        mEnabled = enabled;
+    }
+    
+    public void redraw()
+    {
+        this.mStop = false;
+        this.mEndOffset = -1;
+        this.mStartOffset = -1;
     }
     
     /**
@@ -87,38 +104,40 @@ public class Highlight
      * @param mLayout 
      * @return 返回[[高亮类型,开始offset, 结束offset],,]
      */
-    public static boolean render(Editable mText, int startOffset, int endOffset)
+    public boolean render(Editable mText, int startOffset, int endOffset)
     {
-        Log.d(TAG, startOffset+":"+endOffset);
-        if(mStop || "".equals(mExt))
+        if(!mEnabled)
+            return false;
+
+        if(this.mStop || "".equals(this.mExt))
             return false;
         
-        if(mStartOffset <= startOffset && mEndOffset >= endOffset)
+        if(this.mStartOffset <= startOffset && this.mEndOffset >= endOffset)
             return false;
-        String[] lang = langTab.get(mExt);
+        String[] lang = langTab.get(this.mExt);
         if(lang == null)
         {
             return false;
         }
         //lock it 不然会因为添加了span后导致offset改变，不断地进行高亮
-        mStop = true;
+        this.mStop = true;
         //TimerUtil.start();
-        Log.d(TAG, startOffset+"="+endOffset);
+        //Log.d(TAG, startOffset+"="+endOffset);
         
-        mStartOffset = startOffset;
-        mEndOffset = endOffset;
+        this.mStartOffset = startOffset;
+        this.mEndOffset = endOffset;
         String text = mText.subSequence(0, endOffset).toString();
         int[] ret = jni_parse(text, JecEditor.TEMP_PATH + File.separator + lang[1]);
         //TimerUtil.stop("hg parse");
         if(ret == null)
         {
-            mStop = false;
+            this.mStop = false;
             return false;
         }
         int len = ret.length;
         if(len < 1 || len % 3.0F != 0)
         {
-            mStop = false;
+            this.mStop = false;
             return false;
         }
         
@@ -160,7 +179,7 @@ public class Highlight
                     color = color_attr_name;
                     break;
                 default:
-                    Log.v(TAG, "获取颜色group id失败");
+                    Log.d(TAG, "获取颜色group id失败");
                     mStop = false;
                     return false;
             }
@@ -186,7 +205,7 @@ public class Highlight
         }
         ret = null;
         //TimerUtil.stop("hg 1");
-        mStop = false;
+        this.mStop = false;
         return true;
     }
     

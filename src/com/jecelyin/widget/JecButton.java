@@ -19,6 +19,7 @@ import java.util.HashMap;
 
 import android.content.Context;
 import android.widget.Button;
+import android.widget.LinearLayout.LayoutParams;
 
 public class JecButton extends Button
 {
@@ -27,6 +28,11 @@ public class JecButton extends Button
     public JecButton(Context context) {
         super(context);
         mStrHashMap = new HashMap<String, String>();
+        LayoutParams lp = new LayoutParams(0, LayoutParams.WRAP_CONTENT);
+        //lp.setMargins(0, 0, 0, 0);
+        lp.weight = 1.0F;
+        setLayoutParams(lp);
+        //setPadding(0, 0, 0, 0);
     }
     
     public void putString(String key, String value)
@@ -38,5 +44,18 @@ public class JecButton extends Button
     {
         return mStrHashMap.get(key);
     }
+    
+/*    protected void onMeasure (int widthMeasureSpec, int heightMeasureSpec)
+    {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        TextPaint paint = getPaint();
+        CharSequence text = getText();
+        float width = paint.measureText(text, 0, text.length());
+        //width = Math.max(Math.max(width, 50f), getMeasuredWidth());
+        float density = getResources().getDisplayMetrics().density;
+        width = Math.max(width*density, getSuggestedMinimumWidth());
+        setMeasuredDimension((int)width, getMeasuredHeight());
+    }*/
+ 
 
 }
