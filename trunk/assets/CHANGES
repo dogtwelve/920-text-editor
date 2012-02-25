@@ -1,0 +1,35 @@
+Changes with 12.2.25beta
+
+    *) Feature: multi-tab (the great update)
+    *) Feature: convert line breaks to solve the Android2.0 following version does not correctly display the \r symbol bug
+    *) Feature: display a new version of the changes log
+    *) Feature: add Pascal syntax highlighting
+    
+    *) Change: add right-click menu to switch to show or hide the input method
+    *) Change: Adjust the Help menu and add the "Help" manual (keyboard shortcuts and customize the syntax highlighting)
+    *) Change: The default font "Monospace"
+    *) Change: the non-wrap mode, move to the right display line numbers
+    
+    *) Bug Fix: Fixed file manager does not correctly display the file or folder contains spaces, such as: Ubuntu One
+    Thank to howard@lowndes.name
+    *) Bug Fix: Fixed different themes button is too wide
+    *) Bug Fix: Fixed some Chinese string encoding auto-detection error
+    *) Bug Fix: Fixed not automatically select the installation path cause can not be moved App to Sdcard the problem
+    Thank to Marcos Fernández
+    
+
+Changes with 12.1.18
+
+    *) Change: highlight file size limit to max=400kb.
+    *) Change: optimize the highlight rendering speed.
+    *) Change: add Spanish language support.
+    Thanks to Juan Cruz.
+
+    *) Feature: large Icons toolbar.
+    *) Feature: add "\" to symbol bar.
+    *) Feature: add PowerShell syntax highlight.
+
+    *) Bugfix: open the file automatically open the input method
+    *) Bugfix: LICENSE fixed :-)
+
+

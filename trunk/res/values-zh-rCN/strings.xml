@@ -130,4 +130,13 @@
     <string name="not_need_forward">不需要返回下一个编辑位置</string>
     <string name="report_bug">报告问题</string>
     <string name="project_homepage">帮助改进编辑器</string>
+    <string name="convert_linebreak_char">转换断行符</string>
+    <string-array name="linebreak_chars">
+        <item>保持原样</item>
+        <item>CR+LF (Windows)</item>
+        <item>仅LF (Unix/Android)</item>
+        <item>仅CR (Macintosh)</item>
+    </string-array>
+    <string name="hide_ime">隐藏输入法</string>
+    <string name="changelog">更新日志</string>
 </resources>

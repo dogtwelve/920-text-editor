@@ -35,7 +35,7 @@ public class TimerUtil
     {
         endTime = System.currentTimeMillis();
         double t = (endTime - startTime)/1000.0;
-        Log.i(tag, String.valueOf(t) + " seconds");
+        Log.d(tag, String.valueOf(t) + " seconds");
     }
 
 }

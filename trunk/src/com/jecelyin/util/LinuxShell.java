@@ -21,39 +21,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.mozilla.universalchardet.UniversalDetector;
-
 import android.util.Log;
 
 public class LinuxShell
 {
     public static String getCmdPath(String path)
     {
-        try {
-            UniversalDetector detector;
-            path = path.replace(" ", "\\ ");
-            detector = new UniversalDetector();
-            byte[] buf;
-            buf = path.getBytes();
-            detector.handleData(buf, 0, buf.length);
-            detector.dataEnd();
-            String encoding = detector.getCharset();
-            detector.reset();
-            detector.destroy();
-            Log.v("CMD PATH", "encoding: "+encoding+" path:"+path);
-            if (encoding == null)
-            {
-                // 默认为utf-8
-                encoding = "UTF-8";
-            } else if ("GB18030".equals(encoding))
-            {
-                // 转换下,不然无法正确解码
-                encoding = "GBK";
-            }
-            return "UTF-8".equals(encoding) ? path : new String(path.getBytes(encoding), "utf-8");
-        }catch (Exception e) {
-            return path;
-        }
+        return path.replace(" ", "\\ ").replace("'", "\\'");
     }
     
     /**
@@ -121,19 +95,18 @@ public class LinuxShell
             {
               retval = false;
               exitSu = false;
-              Log.d("ROOT", "Can't get root access or denied by user");
+              Log.e("ROOT", "Can't get root access or denied by user");
             }
             else if (true == currUid.contains("uid=0"))
             {
               retval = true;
               exitSu = true;
-              Log.d("ROOT", "Root access granted");
             }
             else
             {
               retval = false;
               exitSu = true;
-              Log.d("ROOT", "Root access rejected: " + currUid);
+              Log.e("ROOT", "Root access rejected: " + currUid);
             }
 
             if (exitSu)

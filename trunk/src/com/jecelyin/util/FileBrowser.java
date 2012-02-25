@@ -15,10 +15,12 @@
 
 package com.jecelyin.util;
 
+import com.jecelyin.editor.JecEditor;
 import com.jecelyin.editor.R;
 import com.jecelyin.widget.JecButton;
 
 import java.io.File;
+import java.io.IOException;
 //import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
@@ -42,6 +44,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.app.AlertDialog;
@@ -73,6 +76,7 @@ public class FileBrowser extends ListActivity
     private EditText editTextFilename;
     private Intent mIntent;
     private Button saveButton;
+    private Spinner linebreakSpinner;
     private static int OPEN_WITH_CODE = 0;
 
     @Override
@@ -85,6 +89,15 @@ public class FileBrowser extends ListActivity
         editTextFilename = (EditText)findViewById(R.id.editTextFilename);
         saveButton = (Button)findViewById(R.id.btnSave);
         saveButton.setOnClickListener(onSaveBtnClickListener);
+        
+        linebreakSpinner = (Spinner)findViewById(R.id.linebreak_list);
+        LinearLayout linebreakLinearLayout = (LinearLayout)findViewById(R.id.linebreakLinearLayout);
+        /*int sysver = android.os.Build.VERSION.SDK_INT;
+        if(sysver >= 7)
+        {
+            linebreakLinearLayout.setVisibility(View.GONE);
+        }*/
+        
         File file = android.os.Environment.getExternalStorageDirectory();
         pref = PreferenceManager.getDefaultSharedPreferences(this);
         current_path = pref.getString("last_path", file.getPath());
@@ -94,10 +107,13 @@ public class FileBrowser extends ListActivity
         request_mode = mIntent.getIntExtra("mode", 0);
         isRoot = mIntent.getBooleanExtra("isRoot", false);
         editTextFilename.setText(default_filename);
-        if(request_mode == 0)
+        if(request_mode == JecEditor.FILE_BROWSER_OPEN_CODE)
         {
             LinearLayout filenameLinearLayout = (LinearLayout)findViewById(R.id.filenameLinearLayout);
             filenameLinearLayout.setVisibility(View.GONE);
+            linebreakLinearLayout.setVisibility(View.VISIBLE);
+        } else {
+            linebreakLinearLayout.setVisibility(View.GONE);
         }
         //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         showFileList(new File(current_path));
@@ -157,17 +173,24 @@ public class FileBrowser extends ListActivity
         {
             case R.string.open_with:
                 Uri uri = Uri.fromFile(f);
-                if(f.isDirectory())
+                try
                 {
-                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                    intent.setDataAndType(uri, "file/*");
-                    //startActivityForResult(intent, OPEN_WITH_CODE);
-                    startActivity(intent);
-                } else {
-                    Intent it   = new Intent(Intent.ACTION_VIEW);
-                    it.setDataAndType(uri, "*/*");
-                    startActivity(it);
+                    if(f.isDirectory())
+                    {
+                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        intent.setDataAndType(uri, "file/*");
+                        //startActivityForResult(intent, OPEN_WITH_CODE);
+                        startActivity(intent);
+                    } else {
+                        Intent it   = new Intent(Intent.ACTION_VIEW);
+                        it.setDataAndType(uri, "*/*");
+                        startActivity(it);
+                    }
+                }catch (Exception e)
+                {
+                    
                 }
+                
                 
                 return false;
             case R.string.rename:
@@ -244,7 +267,14 @@ public class FileBrowser extends ListActivity
      */
     private void showFileList(File path)
     {
-        String curPath = path.getPath();
+        String curPath;
+        try
+        {
+            curPath = path.getCanonicalPath();
+        }catch (IOException e)
+        {
+            curPath = path.getPath().replaceAll("/./", "/");
+        }
         //设置标题
         setTitle(curPath);
         
@@ -278,29 +308,7 @@ public class FileBrowser extends ListActivity
             Toast.makeText(FileBrowser.this, R.string.can_not_list_file, Toast.LENGTH_LONG).show();
             return;
         }
-        //退回上层目录
-        //String parentPath = path.getParent() == null ? "/" : path.getParent();
-/*        //Log.d("FileBrowser", "File:"+path.getName());
-        FileLists fl;
-        
-        if(fileLists != null)
-        {
-            for (File file:fileLists)
-            {
-                fl = new FileLists();
-                fl.back = false;
-                fl.file = file;
-                files.add(fl);
-            }
-        }
-        Collections.sort(files, comparator);*/
-        /*if(path.getName().length() != 0)
-        {
-            fl = new FileLists();
-            fl.back = true;
-            fl.file = new File(parentPath);
-            files.add(0, fl);
-        }*/
+
         fileListAdapter = new FileListAdapter(this, R.layout.file_list, files);
         setListAdapter(fileListAdapter);
     }
@@ -320,6 +328,7 @@ public class FileBrowser extends ListActivity
             showFileList(file);
         }else{
             mIntent.putExtra("file", file.getPath());
+            mIntent.putExtra("linebreak", linebreakSpinner.getSelectedItemPosition());
             setResult(RESULT_OK, mIntent);
             finish();
         }

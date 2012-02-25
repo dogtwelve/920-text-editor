@@ -24,7 +24,6 @@ import android.graphics.PointF;
 import android.graphics.Shader;
 import android.graphics.SweepGradient;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -173,7 +172,7 @@ public class ColorPickerView extends View {
         float y = event.getY() - height/2;
         
         boolean inCenter = PointF.length(x, y) <= center_radius;
-        Log.v("color", "x:"+x+" ex:"+event.getX()+" y:"+y+" center_radius:"+center_radius+" len:"+PointF.length(x, y));
+        //Log.v("color", "x:"+x+" ex:"+event.getX()+" y:"+y+" center_radius:"+center_radius+" len:"+PointF.length(x, y));
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mTrackingCenter = inCenter;

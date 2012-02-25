@@ -6,7 +6,7 @@
         android:title="@string/view" >
 
         <ListPreference
-            android:defaultValue="Normal"
+            android:defaultValue="Monospace"
             android:key="font"
             android:title="@string/font" >
         </ListPreference>

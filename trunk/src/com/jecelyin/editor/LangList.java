@@ -48,7 +48,7 @@ public class LangList
         public void onClick(DialogInterface dialog, int which)
         {
             final String[] lang = list.get(which);
-            mJecEditor.doHighlight(lang[1]);
+            mJecEditor.getEditText().setCurrentFileExt(lang[1]);
         }
         
     };

@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -123,7 +124,7 @@ public class FileUtil
         }
 
     }
-
+    
     /**
      * 读取整个文件, android默认编码为utf-8,如果文件编码是gbk或其它编码,要是没有指定正确的编码,就会统一当成ut-8编码处理
      * 
@@ -135,6 +136,23 @@ public class FileUtil
      */
     public static String ReadFile(String filename, String encoding)
     {
+        return ReadFile(new File(filename), encoding);
+    }
+    
+    public static String ReadFile(File filename, String encoding)
+    {
+        try
+        {
+            FileInputStream fis = new FileInputStream(filename);
+            return ReadFile(fis, encoding);
+        }catch (FileNotFoundException e)
+        {
+            return "";
+        }
+    }
+    
+    public static String ReadFile(InputStream fis, String encoding)
+    {
         BufferedReader br;
         StringBuilder b = new StringBuilder();
         String line;
@@ -142,7 +160,6 @@ public class FileUtil
 
         try
         {
-            FileInputStream fis = new FileInputStream(filename);
             br = new BufferedReader(new InputStreamReader(fis, encoding));
             try
             {
@@ -155,9 +172,6 @@ public class FileUtil
             {
                 e.printStackTrace();
             }
-        }catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }catch (UnsupportedEncodingException e)
         {
             e.printStackTrace();
@@ -247,24 +261,20 @@ public class FileUtil
             try
             {
                 
-                reader = LinuxShell.execute("for i in `ls "+LinuxShell.getCmdPath(path)+"`; do if [ -d $i ]; then echo \"d $i\";else echo \"f $i\"; fi; done");
+                reader = LinuxShell.execute("IFS='\n';CURDIR='"+LinuxShell.getCmdPath(path)+"';for i in `ls $CURDIR`; do if [ -d $CURDIR/$i ]; then echo \"d $CURDIR/$i\";else echo \"f $CURDIR/$i\"; fi; done");
                 if(reader == null)
                     return null;
-                String[] f;
+                
+                File f;
                 String line;
-                String pt;
                 while ((line = reader.readLine()) != null)
                 {
-                    f = line.trim().split("\\s+");
-                    if(f != null)
+                    f = new File(line.substring(2));
+                    if(line.startsWith("d"))
                     {
-                        pt = "/".equals(path) ? path + f[1] : path + "/" + f[1];
-                        if("d".equals(f[0]))
-                        {
-                            folderList.add(new File(pt));
-                        } else {
-                            fileList.add(new File(pt));
-                        }
+                        folderList.add(f);
+                    } else {
+                        fileList.add(f);
                     }
                 }
             }catch (Exception e)

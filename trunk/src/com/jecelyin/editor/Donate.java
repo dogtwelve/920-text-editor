@@ -16,6 +16,8 @@
 package com.jecelyin.editor;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebView;
 
@@ -31,5 +33,13 @@ public class Donate extends Activity
         setContentView(R.layout.donate);
         WebView mWebView = (WebView)findViewById(R.id.donateWebView);
         mWebView.loadUrl(html_url);
+    }
+    
+    public static Intent getWebIntent()
+    {
+        Uri uri = Uri.parse("http://www.jecelyin.com/donate.html");
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        //startActivity(intent);
+        return intent;
     }
 }

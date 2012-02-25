@@ -34,14 +34,13 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
-import android.util.Log;
 import android.widget.Toast;
 
 public class Options extends PreferenceActivity
 {
     private int category;
     private SharedPreferences mSP;
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -49,7 +48,7 @@ public class Options extends PreferenceActivity
         category = getIntent().getIntExtra("category", R.xml.options);
         addPreferencesFromResource(category);
         mSP = getPreferenceManager().getSharedPreferences();
-        
+
         switch(category)
         {
             case R.xml.view:
@@ -58,12 +57,69 @@ public class Options extends PreferenceActivity
             case R.xml.highlight:
                 initHighlight();
                 break;
+            case R.xml.help:
+                initHelp();
+                break;
             case R.xml.options:
                 init();
                 break;
         }
     }
-    
+
+    private void initHelp()
+    {
+
+        findPreference("about").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+
+            @Override
+            public boolean onPreferenceClick(Preference arg0)
+            {
+                Intent intent = new Intent(Options.this, About.class);
+                startActivity(intent);
+                return true;
+            }
+        });
+        findPreference("help").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+
+            @Override
+            public boolean onPreferenceClick(Preference arg0)
+            {
+                Help.showHelp(Options.this);
+                return true;
+            }
+        });
+        findPreference("feedback").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+
+            @Override
+            public boolean onPreferenceClick(Preference arg0)
+            {
+                Uri uri;
+                try
+                {
+                    uri = Uri.parse("http://www.jecelyin.com/920report.php?ver=" + URLEncoder.encode(JecEditor.version, "utf-8"));
+                }catch (UnsupportedEncodingException e)
+                {
+                    uri = Uri.parse("http://www.jecelyin.com/920report.php?var=badver");
+                }
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                // Intent intent = new Intent(Options.this, Donate.class);
+                startActivity(intent);
+                return true;
+            }
+        });
+
+        findPreference("project").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+
+            @Override
+            public boolean onPreferenceClick(Preference arg0)
+            {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://code.google.com/p/920-text-editor/"));
+                startActivity(intent);
+                return true;
+            }
+        });
+    }
+
     private void initHighlight()
     {
         setHighlightEvent("hlc_font", ColorScheme.color_font);
@@ -74,68 +130,63 @@ public class Options extends PreferenceActivity
         setHighlightEvent("hlc_tag", ColorScheme.color_tag);
         setHighlightEvent("hlc_attr_name", ColorScheme.color_attr_name);
         setHighlightEvent("hlc_function", ColorScheme.color_function);
-        
-        PreferenceCategory cate = (PreferenceCategory)findPreference("custom_highlight_color");
+
+        PreferenceCategory cate = (PreferenceCategory) findPreference("custom_highlight_color");
         cate.setEnabled(mSP.getBoolean("use_custom_hl_color", false));
         CheckBoxPreference uchc = (CheckBoxPreference) findPreference("use_custom_hl_color");
         uchc.setOnPreferenceChangeListener(mOnHighlightChange);
-        
+
     }
-    
+
     private void setHighlightEvent(final String key, final String def)
     {
         Preference pref = (Preference) findPreference(key);
         pref.setSummary(mSP.getString(key, def));
-        
+
         pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference)
             {
-                ColorPicker cp = new ColorPicker(
-                    Options.this, new ColorListener()
-                    , preference.getKey()
-                    , preference.getTitle().toString()
-                    , Color.parseColor(preference.getSharedPreferences().getString(key, def))
-                );
+                ColorPicker cp = new ColorPicker(Options.this, new ColorListener(), preference.getKey(), preference.getTitle().toString(), Color.parseColor(preference
+                        .getSharedPreferences().getString(key, def)));
                 cp.show();
                 return true;
             }
         });
     }
-    
+
     private class ColorListener implements ColorPicker.OnColorChangedListener
     {
         @Override
         public void onColorChanged(String key, String color)
         {
-            Log.v("options", "key:"+key+" color:"+color);
-            Preference pref = (Preference)findPreference(key);
+            Preference pref = (Preference) findPreference(key);
             pref.setSummary(color);
             pref.getEditor().putString(key, color).commit();
         }
-        
+
     }
-    
+
     private void initView()
     {
         ListPreference fontPf = (ListPreference) findPreference("font");
-        String[] fonts = new String[] {"Normal", "Monospace", "Sans Serif", "Serif"};
+        String[] fonts = new String[]{ "Normal", "Monospace", "Sans Serif", "Serif" };
         fontPf.setEntries(fonts);
         fontPf.setEntryValues(fonts);
-        fontPf.setDefaultValue("Normal");
-        
+        fontPf.setDefaultValue("Monospace");
+
         ListPreference fontSizePf = (ListPreference) findPreference("font_size");
-        String[] font_size = new String[] {"10", "12", "13", "14", "16", "18", "20", "22", "24", "26", "28", "32"};
+        String[] font_size = new String[]{ "10", "12", "13", "14", "16", "18", "20", "22", "24", "26", "28", "32" };
         fontSizePf.setEntries(font_size);
         fontSizePf.setEntryValues(font_size);
         fontSizePf.setDefaultValue("14");
     }
-    
+
     private void setOptionsPreference(final String key, final int id)
     {
         Preference pref = (Preference) findPreference(key);
         pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            
+
             @Override
             public boolean onPreferenceClick(Preference arg0)
             {
@@ -153,66 +204,20 @@ public class Options extends PreferenceActivity
         setOptionsPreference("opt_highlight", R.xml.highlight);
         setOptionsPreference("opt_search", R.xml.search);
         setOptionsPreference("opt_other", R.xml.other);
-        Preference aboutPf = (Preference) findPreference("about");
-        aboutPf.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            
-            @Override
-            public boolean onPreferenceClick(Preference arg0)
-            {
-                Intent intent = new Intent(Options.this, About.class);
-                startActivity(intent);
-                return true;
-            }
-        });
-        Preference donate = (Preference) findPreference("donate");
-        donate.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            
-            @Override
-            public boolean onPreferenceClick(Preference arg0)
-            {
-                Uri uri = Uri.parse("http://www.jecelyin.com/donate.html");
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                //Intent intent = new Intent(Options.this, Donate.class);
-                startActivity(intent);
-                return true;
-            }
-        });
-        Preference feedback = (Preference) findPreference("feedback");
-        feedback.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            
-            @Override
-            public boolean onPreferenceClick(Preference arg0)
-            {
-                Uri uri;
-                try
-                {
-                    uri = Uri.parse("http://www.jecelyin.com/920report.php?ver="+URLEncoder.encode(JecEditor.version,"utf-8"));
-                }catch (UnsupportedEncodingException e)
-                {
-                    uri = Uri.parse("http://www.jecelyin.com/920report.php?var=badver");
-                }
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                //Intent intent = new Intent(Options.this, Donate.class);
-                startActivity(intent);
-                return true;
-            }
-        });
+        setOptionsPreference("opt_help", R.xml.help);
         
-        Preference project = (Preference) findPreference("project");
-        project.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            
+        findPreference("donate").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+
             @Override
             public boolean onPreferenceClick(Preference arg0)
             {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://code.google.com/p/920-text-editor/"));
-                startActivity(intent);
+                startActivity(Donate.getWebIntent());
                 return true;
             }
         });
-        
-        Preference clear_history = (Preference) findPreference("clear_history");
-        clear_history.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            
+
+        findPreference("clear_history").setOnPreferenceClickListener(new OnPreferenceClickListener() {
+
             @Override
             public boolean onPreferenceClick(Preference arg0)
             {
@@ -223,7 +228,7 @@ public class Options extends PreferenceActivity
             }
         });
     }
-    
+
     public static Typeface getFont(String font)
     {
         if("Monospace".equals(font))
@@ -238,11 +243,10 @@ public class Options extends PreferenceActivity
     private OnPreferenceChangeListener mOnHighlightChange = new OnPreferenceChangeListener() {
         public boolean onPreferenceChange(Preference pref, Object val)
         {
-            PreferenceCategory cate = (PreferenceCategory)findPreference("custom_highlight_color");
+            PreferenceCategory cate = (PreferenceCategory) findPreference("custom_highlight_color");
             cate.setEnabled(val.toString().equals("true") ? true : false);
             return true;
         }
     };
-    
 
 }

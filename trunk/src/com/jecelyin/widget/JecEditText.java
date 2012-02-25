@@ -15,6 +15,7 @@
 
 package com.jecelyin.widget;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -22,9 +23,9 @@ import com.jecelyin.colorschemes.ColorScheme;
 import com.jecelyin.editor.JecEditor;
 import com.jecelyin.editor.R;
 import com.jecelyin.editor.UndoParcel;
-import com.jecelyin.editor.UndoParcel.OnUndoStatusChange;
 import com.jecelyin.editor.UndoParcel.TextChange;
 import com.jecelyin.highlight.Highlight;
+import com.jecelyin.util.FileUtil;
 import com.jecelyin.util.TextUtil;
 
 import android.content.Context;
@@ -51,6 +52,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
@@ -69,8 +71,8 @@ public class JecEditText extends EditText
     private Path[] mWhiteSpacePaths = new Path[]{ mTabPath, mLineBreakPath };
     private TextPaint mTextPaint;
     private TextPaint mWorkPaint;
-    private int paddingTop = 0;
-    private int paddingLeft = 10;
+    private int paddingLeft = 0;
+    private int lastPaddingLeft = 0;
     private int realLineNum = 0;
     private boolean hasNewline = true;
     private static float TAB_INCREMENT = 20F;
@@ -81,7 +83,6 @@ public class JecEditText extends EditText
     private UndoParcel mUndoParcel = new UndoParcel(); // 撤销与重做缓存
     private UndoParcel mRedoParcel = new UndoParcel(); // 撤销与重做缓存
     private boolean mUndoRedo = false; // 是否撤销过
-    private OnUndoStatusChange mOnUndoStatusChange;
     private boolean mAutoIndent = false;
     private HashMap<Integer, String> mLineStr = new HashMap<Integer, String>();
     private int mLineNumber = 0; // 总行数
@@ -94,38 +95,21 @@ public class JecEditText extends EditText
     private final static String TAG = "JecEditText";
     private VelocityTracker mVelocityTracker;
     private FlingRunnable mFlingRunnable;
+    
+    private String current_encoding = "UTF-8"; // 当前文件的编码,用于正确回写文件
+    private String current_path = ""; // 当前打开的文件路径
+    private String current_ext = ""; // 当前扩展名
+    private int src_text_length; //原始文本内容长度
+    private boolean mNoWrapMode = false;
+    private int mLineNumX = 0; //行数位置
+    
+    private Highlight mHighlight;
 
     // we need this constructor for LayoutInflater
     public JecEditText(Context context, AttributeSet attrs)
     {
         super(context, attrs);
-
-        mWorkPaint = new TextPaint();
-        mTextPaint = getPaint(); // new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        mLineNumberPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        mWhiteSpacePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        // 横屏的时候关闭完成按钮和编辑状态不使用系统的全屏编辑框
-        // IME_FLAG_NO_EXTRACT_UI: Flag of imeOptions: used to specify that the
-        // IME does not need to show its extracted text
-        // UI. For input methods that may be fullscreen, often when in landscape
-        // mode, this allows them to be smaller and let
-        // part of the application be shown behind. Though there will likely be
-        // limited access to the application available
-        // from the user, it can make the experience of a (mostly) fullscreen
-        // IME less jarring. Note that when this flag is
-        // specified the IME may not be set up to be able to display text, so it
-        // should only be used in situations where this
-        // is not needed.
-        // IME_ACTION_DONE: Bits of IME_MASK_ACTION: the action key performs a
-        // "done" operation, typically meaning the IME will be closed.
-        setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
-        init();
-        // 设置填充
-        setPadding(paddingLeft, paddingTop, paddingLeft, paddingTop);
-        mFastScroller = new FastScroller(getContext(), this);
-        addTextChangedListener(mUndoWatcher);
-        clearFocus();
+        //init();
     }
 
     private static class JecSaveState extends BaseSavedState
@@ -185,9 +169,37 @@ public class JecEditText extends EditText
 
     public void init()
     {
+        mHighlight = new Highlight();
+        mWorkPaint = new TextPaint();
+        mTextPaint = getPaint(); // new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        mLineNumberPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        mWhiteSpacePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        // 横屏的时候关闭完成按钮和编辑状态不使用系统的全屏编辑框
+        // IME_FLAG_NO_EXTRACT_UI: Flag of imeOptions: used to specify that the
+        // IME does not need to show its extracted text
+        // UI. For input methods that may be fullscreen, often when in landscape
+        // mode, this allows them to be smaller and let
+        // part of the application be shown behind. Though there will likely be
+        // limited access to the application available
+        // from the user, it can make the experience of a (mostly) fullscreen
+        // IME less jarring. Note that when this flag is
+        // specified the IME may not be set up to be able to display text, so it
+        // should only be used in situations where this
+        // is not needed.
+        // IME_ACTION_DONE: Bits of IME_MASK_ACTION: the action key performs a
+        // "done" operation, typically meaning the IME will be closed.
+        setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+
+        // 设置填充
+        paddingLeft = getPaddingLeft();
+        mFastScroller = new FastScroller(getContext(), this);
+        addTextChangedListener(mUndoWatcher);
+        clearFocus();
+        
         float textSize = mTextPaint.getTextSize();
 
-        mLineNumberPaint.setTextSize(textSize);
+        mLineNumberPaint.setTextSize(textSize-2);
         mLineNumberPaint.setTypeface(Typeface.MONOSPACE);
         mLineNumberPaint.setStrokeWidth(1);
         mLineNumberPaint.setColor(Color.parseColor(ColorScheme.color_font));
@@ -239,7 +251,16 @@ public class JecEditText extends EditText
         mTabPath.lineTo(width * 0.15F, -textHeight * 0.2F);
     }
     
-    public Runnable mOnLastEditChange = null;
+    private OnTextChangedListener mOnTextChangedListener = null;
+    public interface OnTextChangedListener
+    {
+        void onTextChanged(JecEditText mEditText);
+    }
+    
+    public void setOnTextChangedListener(OnTextChangedListener l)
+    {
+        mOnTextChangedListener = l;
+    }
 
     private TextWatcher mUndoWatcher = new TextWatcher() {
         TextChange lastChange;
@@ -249,7 +270,7 @@ public class JecEditText extends EditText
             //Log.v(TAG, "isLoading:" + JecEditor.isLoading);
             if(JecEditor.isLoading)
                 return;
-            Highlight.redraw();
+            mHighlight.redraw();
             //撤销，重做
             if(lastChange != null)
             {
@@ -282,8 +303,8 @@ public class JecEditText extends EditText
             {
                 mLastEditBuffer.add(start);
                 mLastEditIndex = mLastEditBuffer.size() - 1;
-                if(mOnLastEditChange != null)
-                    mOnLastEditChange.run();
+                if(mOnTextChangedListener != null)
+                    mOnTextChangedListener.onTextChanged(JecEditText.this);
             }
         }
 
@@ -315,7 +336,7 @@ public class JecEditText extends EditText
         {
         }
     };
-    
+
 
     private boolean equalsCharSequence(CharSequence s1, CharSequence s2)
     {
@@ -330,14 +351,32 @@ public class JecEditText extends EditText
         return s1.toString().equals(s2.toString());
     }
 
-    public void setOnUndoStatusChange(OnUndoStatusChange mChange)
-    {
-        mOnUndoStatusChange = mChange;
-    }
-
     private void setUndoRedoButtonStatus()
     {
-        mOnUndoStatusChange.run(mUndoParcel.canUndo(), mRedoParcel.canUndo());
+        if(mOnTextChangedListener != null)
+            mOnTextChangedListener.onTextChanged(this);
+    }
+    
+    public boolean canUndo()
+    {
+        return mUndoParcel.canUndo();
+    }
+    
+    public boolean canRedo()
+    {
+        return mRedoParcel.canUndo();
+    }
+    
+    public void show()
+    {
+        setVisibility(View.VISIBLE);
+        if(mOnTextChangedListener != null)
+            mOnTextChangedListener.onTextChanged(this);
+    }
+    
+    public void hide()
+    {
+        setVisibility(View.GONE);
     }
 
     /**
@@ -388,6 +427,7 @@ public class JecEditText extends EditText
     private void setLineNumberWidth(int lastline)
     {
         mLineNumberWidth = (int) mLineNumberPaint.measureText(lastline + "|");
+        
         mLineNumber = lastline;
         mLineNumberLength = Integer.toString(lastline).length();
         setShowLineNum(mShowLineNum);
@@ -406,7 +446,7 @@ public class JecEditText extends EditText
         {
             left = paddingLeft + mLineNumberWidth;
         }
-        setPadding(left, paddingTop, paddingLeft, paddingTop);
+        setPaddingLeft(left);
     }
 
     public void setShowWhitespace(boolean b)
@@ -423,14 +463,20 @@ public class JecEditText extends EditText
             Log.d(TAG, e.getMessage());
         }
     }
+    
+    public String getString()
+    {
+        return getText().toString();
+    }
 
     @Override
     protected void onDraw(Canvas canvas)
     {
         mLayout = getLayout();
         mText = (Editable) getText();
+
         super.onDraw(canvas);
-        
+
         drawView(canvas);
 
         if(mFastScroller != null)
@@ -489,7 +535,7 @@ public class JecEditText extends EditText
                     {
                         mFlingRunnable = new FlingRunnable(getContext());
                     }
-                    Highlight.stop();
+                    mHighlight.stop();
                     mFlingRunnable.start(this, -initialVelocity);
                 }else
                 {
@@ -560,8 +606,13 @@ public class JecEditText extends EditText
 
             if(mWidget != null)
             {
-                mWidget.removeCallbacks(this);
-                mWidget.moveCursorToVisibleOffset();
+                try {
+                    mWidget.removeCallbacks(this);
+                    mWidget.moveCursorToVisibleOffset();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                
                 
                 mWidget = null;
             }
@@ -602,7 +653,7 @@ public class JecEditText extends EditText
                     //Log.d(TAG, "delta:"+delta);
                     if(Math.abs(delta) <= 5)
                     {
-                        Highlight.redraw();
+                        mWidget.mHighlight.redraw();
                     }
                     if(more && delta != 0)
                     {
@@ -713,7 +764,7 @@ public class JecEditText extends EditText
         //Log.d("Highlight", first+"-"+last+"="+dtop+":"+dbottom);
         //这里不要使用getScrollY，因为修改时，光标会变，滚动条不会变，但是高亮需要变
         int previousLineEnd2 = mLayout.getLineStart(first >= 3 ? first-3 : 0);
-        Highlight.render(mText, previousLineEnd2,  mLayout.getLineStart(last+3 > lineCount ? lineCount : last+3));
+        mHighlight.render(mText, previousLineEnd2,  mLayout.getLineStart(last+3 > lineCount ? lineCount : last+3));
 
         if(!mShowLineNum && !mShowWhiteSpace)
         {
@@ -725,6 +776,13 @@ public class JecEditText extends EditText
         if(lastline != mLineNumber)
         {
             setLineNumberWidth(lastline);
+        }
+        //设置显示行号的位置
+        if(mNoWrapMode)
+        {
+            mLineNumX = mLineNumberWidth + getScrollX();
+        } else {
+            mLineNumX = mLineNumberWidth;
         }
 
         int right = getWidth();
@@ -752,7 +810,7 @@ public class JecEditText extends EditText
         // 为了空白时也默认有一行
         if(last == 0)
         {
-            c.drawLine(mLineNumberWidth, top, mLineNumberWidth, mTextPaint.getTextSize(), mLineNumberPaint);
+            c.drawLine(mLineNumX, top, mLineNumX, mTextPaint.getTextSize(), mLineNumberPaint);
             if(hasNewline)
             {
                 String lineString = mLineStr.get(realLineNum);
@@ -761,7 +819,7 @@ public class JecEditText extends EditText
                     lineString = "      " + realLineNum;
                     mLineStr.put(realLineNum, lineString);
                 }
-                c.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), 0, mTextPaint.getTextSize(), mLineNumberPaint);
+                c.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), mLineNumX-mLineNumberWidth, mTextPaint.getTextSize(), mLineNumberPaint);
             }
             return;
         }
@@ -779,7 +837,7 @@ public class JecEditText extends EditText
             int ltop = previousLineBottom;
             int lbottom = mLayout.getLineTop(i + 1);
             previousLineBottom = lbottom;
-            int lbaseline = lbottom + paddingTop;// - mLayout.getLineDescent(i);
+            int lbaseline = lbottom;// - mLayout.getLineDescent(i);
 
             int dir = mLayout.getParagraphDirection(i);
 
@@ -805,7 +863,7 @@ public class JecEditText extends EditText
         }
     }
 
-    private void drawText(Canvas canvas, int start, int end, int dir, Directions directions, float x, int top, int y, int bottom, TextPaint paint, TextPaint workPaint,
+    private void drawText(Canvas canvas, int start, int end, int dir, Directions directions, final float x, int top, int y, int bottom, TextPaint paint, TextPaint workPaint,
             boolean hasTabs, Object[] parspans, int textLength, boolean islastline)
     {
         // linenum
@@ -814,7 +872,7 @@ public class JecEditText extends EditText
             // 竖线
             // drawLine (float startX, float startY, float stopX, float stopY,
             // Paint paint)
-            canvas.drawLine(mLineNumberWidth, top, mLineNumberWidth, islastline ? bottom + (bottom - top) : bottom, mLineNumberPaint);
+            canvas.drawLine(mLineNumX, top, mLineNumX, islastline ? bottom + (bottom - top) : bottom, mLineNumberPaint);
             if(hasNewline)
             {
                 String lineString = mLineStr.get(realLineNum);
@@ -823,11 +881,10 @@ public class JecEditText extends EditText
                     lineString = "      " + realLineNum;
                     mLineStr.put(realLineNum, lineString);
                 }
-                canvas.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), 0, y, mLineNumberPaint);
+                canvas.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), mLineNumX-mLineNumberWidth + 1, y-2, mLineNumberPaint);
                 realLineNum++;
                 hasNewline = false;
             }
-
         }
 
         float h = 0;
@@ -852,15 +909,18 @@ public class JecEditText extends EditText
 
                     if(j != there && at == '\t' && mShowWhiteSpace)
                     {
-                        canvas.translate(x + h, y);
-                        canvas.drawPath(mWhiteSpacePaths[0], mWhiteSpacePaint);
-                        canvas.translate(-x - h, -y);
+                        if(x+h > mLineNumX)
+                        {
+                            canvas.translate(x + h, y);
+                            canvas.drawPath(mWhiteSpacePaths[0], mWhiteSpacePaint);
+                            canvas.translate(-x - h, -y);
+                        }
                         h = dir * nextTabPos(mText, start, end, h * dir, parspans);
                     }else if(j == there)
                     {
                         if(end < textLength && mText.charAt(end) == '\n')
                         {
-                            if(mShowWhiteSpace)
+                            if(mShowWhiteSpace && x+h > mLineNumX)
                             {
                                 canvas.translate(x + h, y);
                                 canvas.drawPath(mWhiteSpacePaths[1], mWhiteSpacePaint);
@@ -1117,6 +1177,77 @@ public class JecEditText extends EditText
             }
         }
         return result;
+    }
+    
+    public void setEncoding(String encoding)
+    {
+        current_encoding = encoding;
+    }
+    
+    public void setPath(String path)
+    {
+        if("".equals(path))
+            return;
+        current_path = path;
+
+        File f = new File(current_path);
+        long fsize = f.length() / 1024;
+        if(fsize > Highlight.getLimitFileSize())
+        {
+            Toast.makeText(getContext(), getResources().getString(R.string.highlight_stop_msg), Toast.LENGTH_LONG).show();
+            return;
+        }
+        setCurrentFileExt(FileUtil.getExt(path));
+    }
+    
+    public void setCurrentFileExt(String ext)
+    {
+        current_ext = ext;
+        
+        mHighlight.redraw();
+        mHighlight.setSyntaxType(current_ext);
+    }
+    
+    public String getCurrentFileExt()
+    {
+        return current_ext;
+    }
+    
+    public String getEncoding()
+    {
+        return current_encoding;
+    }
+    
+    public String getPath()
+    {
+        return current_path;
+    }
+    
+    public void setTextFinger()
+    {
+        src_text_length = getText().length();
+    }
+    
+    public boolean isTextChanged()
+    {
+        //简单判断一下内容是否改变
+        return src_text_length != getText().length();
+    }
+    
+    public void setHorizontallyScrolling(boolean whether)
+    {
+        mNoWrapMode = whether;
+        super.setHorizontallyScrolling(whether);
+    }
+    
+    public void setPaddingLeft(int padding)
+    {
+        if(lastPaddingLeft == padding)
+            return;
+        if(padding < paddingLeft)
+            padding = paddingLeft;
+        lastPaddingLeft = padding;
+        setPadding(padding, 0, getPaddingRight(), getPaddingBottom());
     }
 
 }

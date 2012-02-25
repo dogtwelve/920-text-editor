@@ -135,4 +135,13 @@ You should have received a copy of the GNU General Public License along with thi
     <string name="not_need_forward">Do not need to forward to next edit location</string>
     <string name="report_bug">Report Bug</string>
     <string name="project_homepage">Help improve the editor</string>
+    <string name="convert_linebreak_char">Convert Line Break</string>
+    <string-array name="linebreak_chars">
+        <item>No change</item>
+        <item>CR+LF (Windows)</item>
+        <item>LF Only(Unix/Android)</item>
+        <item>CR Only(Macintosh)</item>
+    </string-array>
+    <string name="hide_ime">Hide Input Method</string>
+    <string name="changelog">Changes Log</string>
 </resources>

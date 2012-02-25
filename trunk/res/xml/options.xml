@@ -27,20 +27,10 @@
         android:key="clear_history"
         android:title="@string/clear_history" >
     </Preference>
-    
+
     <Preference
-        android:key="feedback"
-        android:title="@string/report_bug" >
-    </Preference>
-    
-    <Preference
-        android:key="project"
-        android:title="@string/project_homepage" >
-    </Preference>
-    
-    <Preference
-        android:key="about"
-        android:title="@string/about" >
+        android:key="opt_help"
+        android:title="@string/help" >
     </Preference>
 
 </PreferenceScreen>
