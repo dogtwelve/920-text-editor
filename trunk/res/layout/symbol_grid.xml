@@ -17,11 +17,12 @@
 
         <ImageView
             android:id="@+id/iv_close"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="32dip"
+            android:layout_height="32dip"
             android:layout_gravity="right"
             android:layout_margin="6dip"
             android:src="@drawable/dialog_close" />
+
     </LinearLayout>
 
     <GridView

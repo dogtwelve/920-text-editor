@@ -51,8 +51,8 @@
     <string name="field_license">"Copyright (C) 2011 Jecelyin Peng
  Программа распространяется бесплатно."</string>
     <string name="about">О программе</string>
-    <string name="myname">Jecelyin</string>
-    <string name="myemail">jecelyin@gmail.com</string>
+    <string name="myname">Jecelyin(перевод Vedmat)</string>
+    <string name="myemail">jecelyin@gmail.com(замечания о переводе:vedmat@gmail.com)</string>
     <string name="myhomepage">http://www.jecelyin.com/</string>
     <string name="loading">Загрузка...</string>
     <string name="highlight_stop_msg">Размер файла превышает заданый предел, подсветка синтаксиса остановлена.</string>
@@ -97,4 +97,32 @@
     <string name="can_not_create_temp_path">Невозможно создать временную папку, пожалуйста проверьте вашу SD карту!</string>
     <string name="donate_summary">Используйте браузер для открытия страницы пожертвования.</string>
     <string name="get_root_summary">*Используйте сторонние утилиты для монтирования файловой системы в режим записи!</string>
+    <string name="volume_up_toolbar_msg">Панель инструментов скрыта, вы можите восстановить её нажав клавишу громкости!</string>
+    <string name="volume_up_fullscreen_msg">Активирован полноэкранный режим,вы можите вернуться в нормальный режим нажав клавишу громкости!</string>
+    <string name="autosave">Автосохранение</string>
+    <string name="autosave_summery">Соханять изменения когда редактор работает в фоновом режиме</string>
+    <string name="has_autosave">Текущий документ был автоматически сохранён</string>
+    <string name="overwrite_confirm">Файл с таким имененем уже существует! Заменить?</string>
+    <string name="use_custom_hl_color">Подсветка вручную</string>
+    <string name="use_custom_hl_color_msg">Отключается при выборе шаблона подсветки!</string>
+    <string name="custom_hl_color">Ручные настройки подсветки текста</string>
+    <string name="string_color">Строка</string>
+    <string name="keyword_color">Ключевое слово</string>
+    <string name="comment_color">Коментарий</string>
+    <string name="tag_color">Заголовок (e.g. &lt;?php)</string>
+    <string name="function_color">Функция</string>
+    <string name="attr_color">Атрибут</string>
+    <string name="current_color">Текущий цвет:</string>
+    <string name="invalid_color">Неверное значение</string>
+    <string name="insert_color">Вставить цвет</string>
+    <string name="font_color">Шрифт</string>
+    <string name="backgroup_color">Фон</string>
+    <string name="can_not_create_synfile">Невозможно извлечь файл синтаксиса, удостоверьтесь что SD-карта имеет достаточно места!</string>
+    <string name="can_not_list_file">Невозможно прочитать список файлов, попробуйте открыть / закрыть ROOT привилегии в настройках программы!</string>
+    <string name="go_to_begin">Перейти в начало</string>
+    <string name="go_to_end">Перейти в конец</string>
+    <string name="not_need_back">Невозможно вернуться в предыдущее место редактирования</string>
+    <string name="not_need_forward">Невозможно вернуться в следующее место редактирования</string>
+    <string name="report_bug">Отчёт об ошибках</string>
+    <string name="project_homepage">Помощь в развитии программы</string>
 </resources>

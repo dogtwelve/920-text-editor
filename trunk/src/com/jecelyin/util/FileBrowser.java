@@ -15,6 +15,7 @@
 
 package com.jecelyin.util;
 
+import com.jecelyin.editor.EncodingList;
 import com.jecelyin.editor.JecEditor;
 import com.jecelyin.editor.R;
 import com.jecelyin.widget.JecButton;
@@ -77,6 +78,7 @@ public class FileBrowser extends ListActivity
     private Intent mIntent;
     private Button saveButton;
     private Spinner linebreakSpinner;
+    private Spinner encoding_list;
     private static int OPEN_WITH_CODE = 0;
 
     @Override
@@ -92,6 +94,12 @@ public class FileBrowser extends ListActivity
         
         linebreakSpinner = (Spinner)findViewById(R.id.linebreak_list);
         LinearLayout linebreakLinearLayout = (LinearLayout)findViewById(R.id.linebreakLinearLayout);
+        LinearLayout encodingLinearLayout = (LinearLayout)findViewById(R.id.encodingLinearLayout);
+        
+        encoding_list = (Spinner)findViewById(R.id.encoding_list);
+        String[] lists = EncodingList.list;
+        lists[0] = getString(R.string.auto_detection);
+        encoding_list.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, lists));
         /*int sysver = android.os.Build.VERSION.SDK_INT;
         if(sysver >= 7)
         {
@@ -112,8 +120,10 @@ public class FileBrowser extends ListActivity
             LinearLayout filenameLinearLayout = (LinearLayout)findViewById(R.id.filenameLinearLayout);
             filenameLinearLayout.setVisibility(View.GONE);
             linebreakLinearLayout.setVisibility(View.VISIBLE);
+            encodingLinearLayout.setVisibility(View.VISIBLE);
         } else {
             linebreakLinearLayout.setVisibility(View.GONE);
+            encodingLinearLayout.setVisibility(View.GONE);
         }
         //requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
         showFileList(new File(current_path));
@@ -329,6 +339,7 @@ public class FileBrowser extends ListActivity
         }else{
             mIntent.putExtra("file", file.getPath());
             mIntent.putExtra("linebreak", linebreakSpinner.getSelectedItemPosition());
+            mIntent.putExtra("encoding", encoding_list.getSelectedItemPosition());
             setResult(RESULT_OK, mIntent);
             finish();
         }

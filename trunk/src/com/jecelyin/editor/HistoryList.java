@@ -67,7 +67,7 @@ public class HistoryList
                 public void run()
                 {
                     mJecEditor.readFileToEditText(path);
-                    mJecEditor.setSelection(fi.sel_start, fi.sel_end);
+                    mJecEditor.getEditText().setSelection(fi.sel_start, fi.sel_end);
                 }
             });
         }

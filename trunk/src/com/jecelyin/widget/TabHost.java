@@ -23,11 +23,8 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.preference.PreferenceManager;
 import android.util.AttributeSet;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.SoundEffectConstants;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -41,6 +38,7 @@ import com.jecelyin.editor.Options;
 import com.jecelyin.editor.R;
 import com.jecelyin.highlight.Highlight;
 import com.jecelyin.widget.JecEditText.OnTextChangedListener;
+import com.jecelyin.widget.TabWidget.OnMenuClickListener;
 
 /**
  * Container for a tabbed window view. This object holds two children: a set of
@@ -54,7 +52,7 @@ import com.jecelyin.widget.JecEditText.OnTextChangedListener;
  * resources/tutorials/views/hello-tabwidget.html">Tab Layout tutorial</a>.
  * </p>
  */
-public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchModeChangeListener
+public class TabHost extends LinearLayout
 {
 
     private TabWidget mTabWidget;
@@ -74,7 +72,6 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
      */
     protected LocalActivityManager mLocalActivityManager = null;
     private OnTabChangeListener mOnTabChangeListener;
-    private OnKeyListener mTabKeyListener;
     private HorizontalScrollView mScroller;
     private OnTabCloseListener mOnTabCloseListener;
     
@@ -95,6 +92,7 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
     {
         super(context, attrs);
         // initTabHost();
+        
     }
 
     public void initTabHost(JecEditor parent)
@@ -104,10 +102,11 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
 
         mJecEditor = parent;
         mTabContent = (LinearLayout) mJecEditor.findViewById(R.id.editorBodyLinearLayout);
-
+        
         mCurrentTab = -1;
         mCurrentEditText = null;
         mTabWidget = (TabWidget) this.findViewById(R.id.tabWidgets);
+        mTabWidget.setOnMenuClickListener(mOnMenuClickListener);
         mScroller = (HorizontalScrollView) this.findViewById(R.id.tabScroller);
         ImageButton mNewTabButton = (ImageButton) this.findViewById(R.id.add_new_tab_btn);
         mNewTabButton.setOnClickListener(new OnClickListener() {
@@ -120,44 +119,6 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
         });
     }
 
-    @Override
-    protected void onAttachedToWindow()
-    {
-        super.onAttachedToWindow();
-        final ViewTreeObserver treeObserver = getViewTreeObserver();
-        if(treeObserver != null)
-        {
-            treeObserver.addOnTouchModeChangeListener(this);
-        }
-    }
-
-    @Override
-    protected void onDetachedFromWindow()
-    {
-        super.onDetachedFromWindow();
-        final ViewTreeObserver treeObserver = getViewTreeObserver();
-        if(treeObserver != null)
-        {
-            treeObserver.removeOnTouchModeChangeListener(this);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void onTouchModeChanged(boolean isInTouchMode)
-    {
-        if(!isInTouchMode)
-        {
-            // leaving touch mode.. if nothing has focus, let's give it to
-            // the indicator of the current tab
-            if(mCurrentEditText != null && (!mCurrentEditText.hasFocus() || mCurrentEditText.isFocused()))
-            {
-                mTabWidget.getChildTabViewAt(mCurrentTab).requestFocus();
-            }
-        }
-    }
-    
     public void setTitle(String title)
     {
         if(mCurrentTab < 0)
@@ -182,14 +143,11 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
             int index=0;
             for(JecEditText et : mTabSpecs)
             {
-                if("".equals(path))
+                if("".equals(et.getPath()) && et.getText().length() == 0)
                 {//空白文档，没有内容时，则不打开新文件
-                    if("".equals(et.getPath()) && et.getText().length() == 0)
-                    {
-                        setCurrentTab(index);
-                        return;
-                    }
-                } else if(path.equals(et.getPath())) {
+                    setCurrentTab(index);
+                    return;
+                } else if(!"".equals(path) && path.equals(et.getPath())) {
                     //已经打开了
                     setCurrentTab(index);
                     return;
@@ -198,7 +156,6 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
             }
         }
         View tabIndicator = createIndicatorView();
-        tabIndicator.setOnKeyListener(mTabKeyListener);
 
         mTabWidget.addView(tabIndicator);
         mTabWidget.setTabSelectionListener(new TabWidget.OnTabSelectionChanged() {
@@ -308,34 +265,6 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
     public JecEditText getCurrentEditText()
     {
         return mCurrentEditText;
-    }
-
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event)
-    {
-        final boolean handled = super.dispatchKeyEvent(event);
-
-        // unhandled key ups change focus to tab indicator for embedded
-        // activities
-        // when there is nothing that will take focus from default focus
-        // searching
-        if(!handled && (event.getAction() == KeyEvent.ACTION_DOWN) && (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_UP) && (mCurrentEditText != null)
-                && (mCurrentEditText.hasFocus()) && (mCurrentEditText.findFocus().focusSearch(View.FOCUS_UP) == null))
-        {
-            mTabWidget.getChildTabViewAt(mCurrentTab).requestFocus();
-            playSoundEffect(SoundEffectConstants.NAVIGATION_UP);
-            return true;
-        }
-        return handled;
-    }
-
-    @Override
-    public void dispatchWindowFocusChanged(boolean hasFocus)
-    {
-        if(mCurrentEditText != null)
-        {
-            mCurrentEditText.dispatchWindowFocusChanged(hasFocus);
-        }
     }
 
     public void setCurrentTab(int index)
@@ -452,5 +381,28 @@ public class TabHost extends LinearLayout implements ViewTreeObserver.OnTouchMod
             }
         });
     }
+    
+    private OnMenuClickListener mOnMenuClickListener = new OnMenuClickListener() {
+        
+        @Override
+        public void onMenuClick(int action, int index)
+        {
+            int count = mTabWidget.getTabCount();
+            int start = action==TabWidget.MENU_ACTION_CLOSE_RIGHT ? index+1 : 0;
+            while(--count >= start)
+            {
+                if(action == TabWidget.MENU_ACTION_CLOSE_OTHER && count==index)
+                    continue;
+                if(mOnTabCloseListener != null && mOnTabCloseListener.onTabClose(count))
+                {
+                    closeTab(count);
+                }
+            }
+            if(mTabWidget.getTabCount() < 1)
+            {
+                addTab("");
+            }
+        }
+    };
 
 }

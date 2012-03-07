@@ -139,4 +139,12 @@
     </string-array>
     <string name="hide_ime">隐藏输入法</string>
     <string name="changelog">更新日志</string>
+    <string name="open_pipe">打开于</string>
+    <string name="donate_info">如果你喜欢它，你可以捐助它！</string>
+    <string name="share">共享(发送文本)</string>
+    <string name="open_mode">打开方式</string>
+    <string name="auto_detection">自动检测</string>
+    <string name="tab_close_other">关闭其它标签</string>
+    <string name="tab_close_right">关闭右侧标签</string>
+    <string name="tab_close_all">关闭全部标签</string>
 </resources>
