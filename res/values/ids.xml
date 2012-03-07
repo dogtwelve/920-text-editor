@@ -8,5 +8,12 @@
     <item type="id" name="go_to_end"/>
     <item type="id" name="go_to_begin"/>
     <item name="hide_ime" type="id"/>
-    
+    <item type="id" name="menu_reopen"/>
+    <item type="id" name="menu_pipe"/>
+    <item type="id" name="menu_saveas"/>
+    <item type="id" name="menu_highlight"/>
+    <item type="id" name="menu_encoding"/>
+    <item type="id" name="menu_search_replace"/>
+    <item type="id" name="menu_preferences"/>
+    <item type="id" name="menu_exit"/>
 </resources>

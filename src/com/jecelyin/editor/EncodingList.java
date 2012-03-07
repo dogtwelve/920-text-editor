@@ -31,7 +31,9 @@ import android.widget.TextView;
 public class EncodingList
 {
     private JecEditor mJecEditor;
-    private String[] list = {
+    public static final String[] list = {
+        "UTF-8",
+        "GBK",
         "ARMSCII-8",
         "BIG5",
         "BIG5-HKSCS",

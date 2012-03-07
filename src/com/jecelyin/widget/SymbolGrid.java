@@ -41,6 +41,7 @@ public class SymbolGrid extends LinearLayout
     private OnSymbolClickListener mListener;
     private ImageView closeButton;
     private GridView mGridView;
+    private int mTop, mRight, mBottom, mLeft;
 
     public SymbolGrid(Context context)
     {
@@ -52,16 +53,15 @@ public class SymbolGrid extends LinearLayout
         super(context, attrs);
         //inflate(context, R.layout.symbol_grid, this);
         init();
-        appendToolbarButton();
     }
     
     private void init()
     {
-        LayoutParams layoutParams;
+        LinearLayout.LayoutParams layoutParams;
         DisplayMetrics dm = getResources().getDisplayMetrics();
 
-        int dip6 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, dm);
-        int dip10 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, dm);
+        int dip6 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 9, dm);
+        int dip10 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, dm);
         //自身属性
         /*layoutParams = new LayoutParams((int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 260, dm), LayoutParams.WRAP_CONTENT);
         setLayoutParams(layoutParams);
@@ -73,20 +73,23 @@ public class SymbolGrid extends LinearLayout
         //关闭按钮
         closeButton = new ImageView(getContext());
         closeButton.setImageResource(R.drawable.dialog_close);
-        layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        layoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         layoutParams.gravity = Gravity.RIGHT;
-        layoutParams.setMargins(0, dip6, dip6, dip6);
+        layoutParams.setMargins(dip6, dip6, dip6, dip6);
         closeButton.setLayoutParams(layoutParams);
         addView(closeButton);
         //符号表格
         mGridView = new GridView(getContext());
-        layoutParams = new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT, Gravity.CENTER);
+        layoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         mGridView.setLayoutParams(layoutParams);
         mGridView.setHorizontalSpacing(dip10);
         mGridView.setVerticalSpacing(dip10);
         mGridView.setNumColumns(6);
         mGridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        appendToolbarButton();
         addView(mGridView);
+        setPadding(dip10, dip10, dip10, dip10);
+        invalidate();
     }
 
     public static interface OnSymbolClickListener
@@ -126,6 +129,7 @@ public class SymbolGrid extends LinearLayout
 
         mButtons.add(buildToolbarButton(R.drawable.tool_comma1, ",", "tool_comma"));
         mButtons.add(buildToolbarButton(R.drawable.tool_and1, "&", "tool_and"));
+        mButtons.add(buildToolbarButton(R.drawable.tool_question, "?", "tool_question"));
         
         mButtons.add(buildToolbarButton(R.drawable.tool_tab1, "\t", "tool_tab"));
         mButtons.add(buildToolbarButton(R.drawable.tool_enter1, "\n", "tool_enter"));
@@ -151,13 +155,12 @@ public class SymbolGrid extends LinearLayout
         });
         
         setOnTouchListener(new OnTouchListener() {
-            int lastX, lastY; // 记录移动的最后的位置
-
+            private int lastX, lastY; // 记录移动的最后的位置
+            
             @Override
             public boolean onTouch(View v, MotionEvent event)
             {
                 // 获取Action
-
                 int ea = event.getAction();
 
                 switch(ea)
@@ -170,12 +173,11 @@ public class SymbolGrid extends LinearLayout
                         // 移动中动态设置位置
                         int dx = (int) event.getRawX() - lastX;
                         int dy = (int) event.getRawY() - lastY;
-                        int left = v.getLeft() + dx;
-                        int top = v.getTop() + dy;
-                        int right = v.getRight() + dx;
-                        int bottom = v.getBottom() + dy;
-                        v.layout(left, top, right, bottom);
-
+                        mLeft = v.getLeft() + dx;
+                        mTop = v.getTop() + dy;
+                        mRight = v.getRight() + dx;
+                        mBottom = v.getBottom() + dy;
+                        v.layout(mLeft, mTop, mRight, mBottom);
                         // 将当前的位置再次设置
                         lastX = (int) event.getRawX();
                         lastY = (int) event.getRawY();
@@ -195,4 +197,14 @@ public class SymbolGrid extends LinearLayout
         map.put("res", bg);
         return map;
     }
+    
+    @Override
+    public void setVisibility(int visibility)
+    {
+        //不能直接GONE，不然位置会变
+        if(visibility == View.GONE)
+            visibility = View.INVISIBLE;
+        super.setVisibility(visibility);
+    }
+    
 }

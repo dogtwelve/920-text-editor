@@ -20,10 +20,13 @@ import com.jecelyin.editor.R;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 
 /**
  *
@@ -47,19 +50,25 @@ import android.widget.LinearLayout;
  */
 public class TabWidget extends LinearLayout {
     private OnTabSelectionChanged mSelectionChangedListener;
-
     private int mSelectedTab = 0;
+    private PopupWindow mPopup;
+    private int mMenuCurrentIndex;
+    private OnMenuClickListener mOnMenuClickListener;
+    
+    public static final int MENU_ACTION_CLOSE_OTHER = 1;
+    public static final int MENU_ACTION_CLOSE_RIGHT = 2;
+    public static final int MENU_ACTION_CLOSE_ALL = 3;
 
     public TabWidget(Context context) {
         super(context);
         //this(context, attrs, com.android.internal.R.attr.tabWidgetStyle);
-        initTabWidget();
+        initTabWidget(context);
     }
     
     public TabWidget(Context context, AttributeSet attrs) {
         super(context, attrs);
         //this(context, attrs, com.android.internal.R.attr.tabWidgetStyle);
-        initTabWidget();
+        initTabWidget(context);
     }
 
     @Override
@@ -67,10 +76,63 @@ public class TabWidget extends LinearLayout {
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
-    private void initTabWidget() {
+    private void initTabWidget(final Context context) {
         // Deal with focus, as we don't want the focus to go by default
         // to a tab other than the current tab
         setFocusable(true);
+        View mView = (View)LayoutInflater.from(context).inflate(R.layout.tab_menu, null);
+        //不能这么用，一定要传正确的context，不然无法点其它地方关闭菜单
+        //mPopup = new PopupWindow(mView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        mPopup = new PopupWindow(context);
+        mPopup.setContentView(mView);
+        //mPopup.setWindowLayoutMode(context.getResources().getDimensionPixelSize(R.dimen.menu_width), ViewGroup.LayoutParams.WRAP_CONTENT);
+        //mPopup.setWidth(context.getResources().getDimensionPixelSize(R.dimen.menu_width));
+        mPopup.setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
+        mPopup.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
+        mPopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
+        //点击其它地方关闭菜单
+        mPopup.setOutsideTouchable(true);
+        mPopup.setFocusable(true);
+        //背景透明，不能设置为null
+        mPopup.setBackgroundDrawable(new BitmapDrawable());
+        
+        LinearLayout linearLayout_closeothers = (LinearLayout)mView.findViewById(R.id.linearLayout_closeothers);
+        LinearLayout linearLayout_closeright = (LinearLayout)mView.findViewById(R.id.linearLayout_closeright);
+        LinearLayout linearLayout_closeall = (LinearLayout)mView.findViewById(R.id.linearLayout_closeall);
+        
+        linearLayout_closeall.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                hideMenu();
+                if(mOnMenuClickListener!=null)
+                    mOnMenuClickListener.onMenuClick(MENU_ACTION_CLOSE_ALL, mMenuCurrentIndex);
+            }
+        });
+        linearLayout_closeothers.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                hideMenu();
+                if(mOnMenuClickListener!=null)
+                    mOnMenuClickListener.onMenuClick(MENU_ACTION_CLOSE_OTHER, mMenuCurrentIndex);
+            }
+        });
+        linearLayout_closeright.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                hideMenu();
+                if(mOnMenuClickListener!=null)
+                    mOnMenuClickListener.onMenuClick(MENU_ACTION_CLOSE_RIGHT, mMenuCurrentIndex);
+            }
+        });
+    }
+    
+    public void hideMenu()
+    {
+        if(mPopup.isShowing())
+            mPopup.dismiss();
     }
 
     /**
@@ -131,6 +193,12 @@ public class TabWidget extends LinearLayout {
         mSelectedTab = index;
         getChildTabViewAt(mSelectedTab).setSelected(true);
         getChildTabViewAt(mSelectedTab).setBackgroundResource(R.drawable.tab_indicator_current);
+        if(mSelectedTab == 0)
+        {
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)getChildTabViewAt(mSelectedTab).getLayoutParams();
+            lp.leftMargin = 0;
+            getChildTabViewAt(mSelectedTab).setLayoutParams(lp);
+        }
         //Log.d("TabWidget", "setCurrentTab:"+index);
     }
 
@@ -149,15 +217,15 @@ public class TabWidget extends LinearLayout {
      *  @see #setCurrentTab
      */
     public void focusCurrentTab(int index) {
-        final int oldTab = mSelectedTab;
+        //final int oldTab = mSelectedTab;
 
         // set the tab
         setCurrentTab(index);
 
         // change the focus if applicable.
-        if (oldTab != index) {
+        /*if (oldTab != index) {
             getChildTabViewAt(index).requestFocus();
-        }
+        }*/
     }
 
     @Override
@@ -183,6 +251,35 @@ public class TabWidget extends LinearLayout {
 
         //触发onFocusChange
         child.setOnClickListener(mOnClickListener);
+        //右键菜单
+        child.setOnLongClickListener(new OnLongClickListener() {
+            
+            @Override
+            public boolean onLongClick(View v)
+            {
+                int index = indexOfChild(v);
+                if(index < 0)
+                    return false;
+                showTabMenu(v, index);
+                return false;
+            }
+        });
+    }
+    
+    private void showTabMenu(View v, int index)
+    {
+        mMenuCurrentIndex = index;
+        mPopup.showAsDropDown(v, 0, -8);
+    }
+    
+    public void setOnMenuClickListener(OnMenuClickListener l)
+    {
+        mOnMenuClickListener = l;
+    }
+    
+    interface OnMenuClickListener
+    {
+        public void onMenuClick(int action, int index);
     }
 
     /**
@@ -200,7 +297,7 @@ public class TabWidget extends LinearLayout {
             int index = indexOfChild(v);
             if(index < 0)
                 return;
-            Log.d("TabWidget", "onFocusChange: "+mSelectedTab+"/"+index);
+            //Log.d("TabWidget", "onFocusChange: "+mSelectedTab+"/"+index);
             setCurrentTab(index);
             mSelectionChangedListener.onTabSelectionChanged(index);
         }

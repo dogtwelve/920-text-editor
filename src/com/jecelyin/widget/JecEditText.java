@@ -48,7 +48,6 @@ import android.text.method.Touch;
 import android.text.style.ParagraphStyle;
 import android.text.style.TabStopSpan;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -89,7 +88,7 @@ public class JecEditText extends EditText
     private int mLineNumberWidth = 0; // 行数栏宽度
     private int mLineNumberLength = 0; // 行数字数
     private ArrayList<Integer> mLastEditBuffer = new ArrayList<Integer>();
-    private final static int LAST_EDIT_DISTANCE_LIMIT = 60; //最后编辑位置距离限制，不做同行判断
+    private final static int LAST_EDIT_DISTANCE_LIMIT = 20; //最后编辑位置距离限制，不做同行判断
     private int mLastEditIndex = -1; //最后编辑位置功能的游标
 
     private final static String TAG = "JecEditText";
@@ -99,6 +98,7 @@ public class JecEditText extends EditText
     private String current_encoding = "UTF-8"; // 当前文件的编码,用于正确回写文件
     private String current_path = ""; // 当前打开的文件路径
     private String current_ext = ""; // 当前扩展名
+    private int current_linebreak=0; //换行字符
     private int src_text_length; //原始文本内容长度
     private boolean mNoWrapMode = false;
     private int mLineNumX = 0; //行数位置
@@ -154,7 +154,7 @@ public class JecEditText extends EditText
     @Override
     public void onRestoreInstanceState(Parcelable state)
     {
-        Log.v("EditText", String.valueOf(state instanceof JecSaveState));
+        //Log.v("EditText", String.valueOf(state instanceof JecSaveState));
         if(!(state instanceof JecSaveState))
         {
             super.onRestoreInstanceState(state);
@@ -310,7 +310,7 @@ public class JecEditText extends EditText
 
         public void beforeTextChanged(CharSequence s, int start, int count, int after)
         {
-            Log.v(TAG, "isLoading:" + JecEditor.isLoading);
+            //Log.v(TAG, "isLoading:" + JecEditor.isLoading);
             if(JecEditor.isLoading)
                 return;
             if(mUndoRedo)
@@ -460,7 +460,7 @@ public class JecEditText extends EditText
             super.setText(text);
         } catch (OutOfMemoryError e) {
             Toast.makeText(getContext(), R.string.out_of_memory, Toast.LENGTH_SHORT).show();
-            Log.d(TAG, e.getMessage());
+            //Log.d(TAG, e.getMessage());
         }
     }
     
@@ -1248,6 +1248,16 @@ public class JecEditText extends EditText
             padding = paddingLeft;
         lastPaddingLeft = padding;
         setPadding(padding, 0, getPaddingRight(), getPaddingBottom());
+    }
+    
+    public void setLineBreak(int linebreak)
+    {
+        current_linebreak = linebreak;
+    }
+    
+    public int getLineBreak()
+    {
+        return current_linebreak;
     }
 
 }

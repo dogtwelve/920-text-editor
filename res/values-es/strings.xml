@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 西班牙语 -->
     <string name="app_name">920 Text Editor</string>
     <string name="open">Abrir</string>
     <string name="select_file">Seleccionar archivo</string>
@@ -82,7 +83,7 @@ Debería haber recibido una copia de la Licencia Pública General de GNU junto c
     <string name="keep_screen_on_summary">Mantener la pantalla encendida mientras esté en uso el editor.</string>
     <string name="keep_screen_on">Mantener la pantalla encendida</string>
     <string name="help">Ayuda</string>
-    <string name="donate">Donación...</string>
+    <string name="donate">Donación…</string>
     <!-- 菜单 -->
     <string name="show_ime">Mostrar el teclado</string>
     <string name="to_lower">Convertir a minúscula</string>
@@ -135,4 +136,22 @@ Debería haber recibido una copia de la Licencia Pública General de GNU junto c
     <string name="not_need_forward">No es posible avanzar a la siguiente posición editada</string>
     <string name="report_bug">Reportar errores</string>
     <string name="project_homepage">Ayude a mejorar el editor</string>
+    <string name="convert_linebreak_char">Convertir salto de línea</string>
+    <string-array name="linebreak_chars">
+       <item>No cambiar</item>
+       <item>CR+LF (Windows)</item>
+       <item>Solo LF (Unix/Android)</item>
+       <item>Solo CR (Macintosh)</item>
+   </string-array>
+   <string name="hide_ime">Ocultar método de entrada</string>
+   <string name="changelog">Cambiar registros</string>
+   
+  <string name="open_pipe">Abrir con...</string>
+  <string name="donate_info">¡Si te agrada el editor, tu puedes colaborar donando!</string>
+  <string name="share">Compartir (Enviar texto)</string>
+  <string name="open_mode">Modo de apertura</string>
+  <string name="auto_detection">Detección automática</string>
+  <string name="tab_close_other">Cerrar otras pestañas</string>
+  <string name="tab_close_right">Cerrar las pestañas a la derecha</string>
+  <string name="tab_close_all">Cerrar todas las pestañas</string>
 </resources>

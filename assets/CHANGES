@@ -1,3 +1,39 @@
+Version 12.3.6.2
+    *) Bug Fix: fixed enable the "open last file" led to the program may not start bug
+Version 12.3.6.1
+    *) Bug Fix: close all tab error!
+    
+Version 12.3.6
+
+    *) Feature: new shortcut to use other programs to open or shared the current document
+    *) Feature: Add to open the file specified encoding
+    *) Feature: add "tab" right menu(long click to show)
+    *) Feature: support for receiving the text content or files from other programs to share
+    
+    *) Change: beautification of the main menu
+    *) Change: Adjust the symbol column size
+    *) Change: Remember last open files to edit the location and coding
+    *) Change: Remember the symbol column position of the current Session
+    
+    *) Bug Fix: Fixed the last edit location button to display the error
+    *) Bug Fix: Fixed "Save As" does not work Bug
+    *) Bug Fix: Enter a Tab character may appear two tab characters
+
+
+Version 12.2.25beta2
+
+    *) Feature: Symbol bar to add "?" Symbol
+    
+    *) Change: adjust the symbol bar close button size
+    *) Change: updated Russian translation
+    Thank to Калакин Алексей
+    
+    *) Bug Fix: Fixed some phone can not use the hard keyboard
+    Thanks for all the feedback guy
+    *) Bug Fix: Tab and text content is lost after the screen rotation
+    Thank to Fabio Voltattorni
+    
+    
 Changes with 12.2.25beta
 
     *) Feature: multi-tab (the great update)

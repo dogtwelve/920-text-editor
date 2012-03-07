@@ -37,7 +37,7 @@ public class AsyncReadFile
     private static boolean isRoot = false;
     private int lineBreak = 0;
     
-    public AsyncReadFile(JecEditor mJecEditor, String path, int lineBreak)
+    public AsyncReadFile(JecEditor mJecEditor, String path, String encoding, int lineBreak)
     {
         // 加载文件不算改动，不能有撤销操作
         JecEditor.isLoading = true;
@@ -45,6 +45,7 @@ public class AsyncReadFile
         this.mJecEditor = mJecEditor;
         this.path = path;
         this.lineBreak = lineBreak;
+        this.encoding = encoding;
         isRoot = JecEditor.isRoot;
         mData = "";
 
@@ -68,7 +69,8 @@ public class AsyncReadFile
                 fileString = tempFile;
                 root = true;
             }
-            encoding = getEncoding(fileString);
+            if("".equals(encoding))
+                encoding = getEncoding(fileString);
             mData = Highlight.readFile(fileString, encoding);
             if(lineBreak == 2)
             {//unix
@@ -116,6 +118,7 @@ public class AsyncReadFile
             mEditText.clearFocus();
             //mJecEditor.text_content.invalidate();
             mEditText.setEncoding(encoding);
+            mEditText.setLineBreak(lineBreak);
             mEditText.setPath(path);
             mJecEditor.onLoaded();
             JecEditor.isLoading = false;

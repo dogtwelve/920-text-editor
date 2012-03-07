@@ -144,4 +144,12 @@ You should have received a copy of the GNU General Public License along with thi
     </string-array>
     <string name="hide_ime">Hide Input Method</string>
     <string name="changelog">Changes Log</string>
+    <string name="open_pipe">Open With</string>
+    <string name="donate_info">If you like it, you can donate it!</string>
+    <string name="share">Share(Send Text)</string>
+    <string name="open_mode">Open Mode</string>
+    <string name="auto_detection">Auto detection</string>
+    <string name="tab_close_other">Close Other Tabs</string>
+    <string name="tab_close_right">Close Right Tabs</string>
+    <string name="tab_close_all">Close All Tabs</string>
 </resources>
