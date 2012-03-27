@@ -49,7 +49,7 @@ char *ProberName[] =
   "UTF8",
   "SJIS",
   "EUCJP",
-  "GB18030",
+  "GBK",
   "EUCKR",
   "Big5",
   "EUCTW",

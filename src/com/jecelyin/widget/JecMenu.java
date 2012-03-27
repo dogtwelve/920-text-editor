@@ -97,6 +97,7 @@ public class JecMenu extends Dialog implements OnItemClickListener
       getWindow().setBackgroundDrawableResource(R.drawable.main_menu_bg);
       //按非窗口区域时，可以关闭窗口
       setCanceledOnTouchOutside(true);
+      //Toast.makeText(getContext(), "Menu onCreate", Toast.LENGTH_LONG).show();
     }
     
     protected void onStart()

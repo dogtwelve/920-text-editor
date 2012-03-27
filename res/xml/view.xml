@@ -19,6 +19,12 @@
 
         <CheckBoxPreference
             android:defaultValue="true"
+            android:key="touch_zoom"
+            android:title="@string/touch_zoom" >
+        </CheckBoxPreference>
+        
+        <CheckBoxPreference
+            android:defaultValue="true"
             android:key="wordwrap"
             android:title="@string/word_wrap" >
         </CheckBoxPreference>

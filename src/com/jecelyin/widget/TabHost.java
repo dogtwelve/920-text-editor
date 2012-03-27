@@ -404,5 +404,15 @@ public class TabHost extends LinearLayout
             }
         }
     };
+    
+    public ArrayList<String> getAllPath()
+    {
+        ArrayList<String> ret = new ArrayList<String>();
+        for(JecEditText jec :mTabSpecs)
+        {
+            ret.add(jec.getPath());
+        }
+        return ret;
+    }
 
 }
