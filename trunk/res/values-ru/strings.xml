@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Text Editor</string>
+    <string name="app_name">920 Text Editor</string>
     <string name="open">Открыть</string>
     <string name="select_file">Выбрать файл</string>
     <string name="confirm_exit">Выйти?</string>
@@ -14,7 +14,7 @@
     <string name="save_changes">Сохранить изменения?</string>
     <string name="save">Сохранить</string>
     <string name="filename_is_empty">Имя файла не может быть пустым!</string>
-    <string name="new_filename">Наназван</string>
+    <string name="new_filename">Новый</string>
     <string name="highlight">Подсветка</string>
     <string name="search_replace">Найти/Заменить</string>
     <string name="options">Опции</string>
@@ -31,7 +31,7 @@
     <string name="replace_finish">Замена завершена!</string>
     <string name="font">Шрифт</string>
     <string name="font_size">Размер шрифта</string>
-    <string name="view">Вид</string>
+    <string name="view">Просмотр</string>
     <string name="word_wrap">Перенос строк</string>
     <string name="show_line_num">Показывать номера строк</string>
     <string name="show_tab">Показывать табуляцию</string>
@@ -48,8 +48,10 @@
     <string name="label_email">Email</string>
     <string name="label_homepage">Домашняя страница</string>
     <string name="label_license">Лицензия</string>
-    <string name="field_license">"Copyright (C) 2011 Jecelyin Peng
- Программа распространяется бесплатно."</string>
+    <string name="field_license">"Copyright (C) 2011-2012 Jecelyin Peng
+ 920 Text Editor является свободным программным обеспечением, вы можете распространять и/или модифицировать его на условиях GNU General Public License, опубликованной Free Software Foundation, версии 3, либо любой более поздней версии (по вашему выбору).
+ 920 Text Editor распространяется в надежде на то что он будет полезен Вам, но БЕЗ ВСЯЧЕСКИХ ГАРАНТИЙ, даже без подразумеваемых гарантий КОММЕРЧЕСКОЙ ЦЕННОСТИ или ПРИГОДНОСТИ ДЛЯ КОНКРЕТНЫХ ЦЕЛЕЙ со стороны разработчиков. Для более подробной информации см. описание GNU General Public License.
+ Вы должны были получить копию Public License GNU General вместе с этой программой, в случае её отсутствия обратитесь на http://www.gnu.org/licenses."</string>
     <string name="about">О программе</string>
     <string name="myname">Jecelyin(перевод Vedmat)</string>
     <string name="myemail">jecelyin@gmail.com(замечания о переводе:vedmat@gmail.com)</string>
@@ -75,6 +77,7 @@
     <string name="help">Помощь</string>
     <string name="donate">Пожертвование...</string>
     <string name="show_ime">Показать панель ввода</string>
+    <string name="hide_ime">Скрыть панель ввода</string>
     <string name="to_lower">Заменить на строчные</string>
     <string name="to_upper">Заменить на прописные</string>
     <string name="out_of_memory">Ошибка открытия файла. Недостаточно памяти!</string>
@@ -124,5 +127,14 @@
     <string name="not_need_back">Невозможно вернуться в предыдущее место редактирования</string>
     <string name="not_need_forward">Невозможно вернуться в следующее место редактирования</string>
     <string name="report_bug">Отчёт об ошибках</string>
+    <string name="convert_linebreak_char">Разрывы строк</string>
     <string name="project_homepage">Помощь в развитии программы</string>
+    <string name="open_pipe">Открыть с помощью</string>
+    <string name="donate_info">Если Вам нравится эта программа, поддержите её!</string>
+    <string name="share">Отправить текст</string>
+    <string name="open_mode">Открыть</string>
+    <string name="auto_detection">Автоопределение</string>
+    <string name="tab_close_other">Закрыть другие вкладки</string>
+    <string name="tab_close_right">Закрыть вкладки справа</string>
+    <string name="tab_close_all">Закрыть все вкладки</string>
 </resources>

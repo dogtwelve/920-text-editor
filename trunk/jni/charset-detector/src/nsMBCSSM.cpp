@@ -376,7 +376,7 @@ SMModel GB18030SMModel = {
    7,
   {eIdxSft4bits, eSftMsk4bits, eBitSft4bits, eUnitMsk4bits, GB18030_st },
   GB18030CharLenTable,
-  "GB18030",
+  "GBK",
 };
 
 // sjis

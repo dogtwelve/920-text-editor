@@ -19,6 +19,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -28,6 +31,7 @@ import com.jecelyin.util.ColorPicker;
 import com.jecelyin.util.FileBrowser;
 import com.jecelyin.util.FileUtil;
 import com.jecelyin.util.LinuxShell;
+import com.jecelyin.util.TimeUtil;
 import com.jecelyin.widget.JecEditText;
 import com.jecelyin.widget.JecMenu;
 import com.jecelyin.widget.JecMenu.OnMenuItemSelectedListener;
@@ -48,6 +52,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -81,7 +86,8 @@ public class JecEditor extends Activity
     public final static int FILE_BROWSER_SAVEAS_CODE = 1; // 另存为
     private final static String TAG = "JecEditor";
     public final static String PREF_HISTORY = "history"; // 保存打开文件记录
-    private final static String SYNTAX_SIGN = "11";
+    private final static String PREF_LAST_FILE = "last_files"; // 最后打开的文件
+    private final static String SYNTAX_SIGN = "16";
     public static String version = "";
     public static String TEMP_PATH = "";
     private JecEditText mEditText;
@@ -125,7 +131,7 @@ public class JecEditor extends Activity
 
         }
     };
-    private LinearLayout toolbarbox_LinearLayout;
+    private HorizontalScrollView toolbar;
     private Drawable undo_can_drawable;
     private Drawable undo_no_drawable;
     private Drawable redo_can_drawable;
@@ -163,7 +169,7 @@ public class JecEditor extends Activity
         findEditText = (EditText) findViewById(R.id.find_editText);
         replaceEditText = (EditText) findViewById(R.id.replace_editText);
         previewBtn = (ImageButton) findViewById(R.id.preview);
-        toolbarbox_LinearLayout = (LinearLayout) findViewById(R.id.toolbarbox_LinearLayout);
+        toolbar = (HorizontalScrollView) findViewById(R.id.toolbar);
         last_edit_back = (ImageButton) findViewById(R.id.last_edit_back);
         last_edit_forward = (ImageButton) findViewById(R.id.last_edit_forward);
         undo_can_drawable = getResources().getDrawable(R.drawable.undo_sel2);
@@ -178,6 +184,32 @@ public class JecEditor extends Activity
         // 设置横屏时不全屏编辑
         findEditText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         replaceEditText.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        // 一些android 3.0设备没有菜单按钮， 要特殊处理
+        /**
+         *  Android 4.0, 4.0.1, 4.0.2    14  ICE_CREAM_SANDWICH
+         *  Android 3.2     13  HONEYCOMB_MR2   
+         *  Android 3.1.x   12  HONEYCOMB_MR1
+         *  Android 3.0.x   11
+         */
+        mMenu = new JecMenu(JecEditor.this);
+        mMenu.setOnMenuItemSelectedListener(mOnMenuItemSelectedListener);
+        //尽量在平板电脑上才显示菜单按钮
+        boolean showMenu = android.os.Build.VERSION.SDK_INT > 10;
+        ImageButton menuButton = (ImageButton) findViewById(R.id.menu);
+        if(showMenu)
+        {
+            menuButton.setVisibility(View.VISIBLE);
+            menuButton.setOnClickListener(new OnClickListener() {
+                
+                @Override
+                public void onClick(View v)
+                {
+                    closeOptionsMenu();
+                    openOptionsMenu();
+                    mMenu.show();
+                }
+            });
+        }
         // end
         mPref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -211,7 +243,7 @@ public class JecEditor extends Activity
             }
         });
 
-       //标签切换事件
+        //标签切换事件
         mTabHost.setOnTabChangedListener(new OnTabChangeListener() {
             
             @Override
@@ -373,14 +405,14 @@ public class JecEditor extends Activity
                 {
                     readFileToEditText(open_path);
                 }
-            }else if (mIntent != null && Intent.ACTION_SEND.equals(mIntent.getAction())) {
+            }else if (mIntent != null && Intent.ACTION_SEND.equals(mIntent.getAction()) && mIntent.getExtras() != null) {
                     Bundle extras = mIntent.getExtras();
                     CharSequence text = extras.getCharSequence(Intent.EXTRA_TEXT);
                     if (text != null) {
                         mEditText.setText2(text.toString());
                     }
 
-            } else if (mIntent != null && ACTION_EDIT_SCRIPT.equals(mIntent.getAction())) {
+            } else if (mIntent != null && ACTION_EDIT_SCRIPT.equals(mIntent.getAction()) && mIntent.getExtras() != null) {
                 Bundle extras = mIntent.getExtras();
                 String path = extras.getString(EXTRA_SCRIPT_PATH);
                 CharSequence contents = extras.getCharSequence(EXTRA_SCRIPT_CONTENT);
@@ -394,11 +426,22 @@ public class JecEditor extends Activity
             }else
             {
                 // 打开上次打开的文件
-                String last_file = mPref.getString("last_file", "");
-                if(!"".equals(last_file) && mPref.getBoolean("open_last_file", false))
+                if(mPref.getBoolean("open_last_file", false))
                 {
                     //在onLoaded处理最后位置
-                    readFileToEditText(last_file);
+                    
+                    SharedPreferences sp = getSharedPreferences(PREF_LAST_FILE, MODE_PRIVATE);
+                    Map<String, ?> map = sp.getAll();
+                    if(map.size() > 0)
+                    {
+                        for (Entry<String, ?> entry : map.entrySet())
+                        {
+                            Object val = entry.getValue();
+                            if (val instanceof String) {
+                                readFileToEditText((String)val);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -476,6 +519,12 @@ public class JecEditor extends Activity
     
     protected void onStop() {
         saveHistory();
+        // 自动保存当前文档
+        if(autosave && mEditText.isTextChanged())
+        {
+            save();
+            //Toast.makeText(this, R.string.has_autosave, Toast.LENGTH_LONG).show();
+        }
         super.onStop();
     }
     
@@ -501,6 +550,7 @@ public class JecEditor extends Activity
             }
         }
         
+        JecEditText.TOUCH_ZOOM_ENABLED = mPref.getBoolean("touch_zoom", true);
         mHideSoftKeyboard = mPref.getBoolean("hide_soft_Keyboard", false);
         if(mHideSoftKeyboard)
         {
@@ -566,6 +616,25 @@ public class JecEditor extends Activity
             }
         }
     }
+    
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event)
+    {
+        int ctrlKeyCode = 8 | 0x1000;
+        int keycode = event.getKeyCode();
+        // CTRL + KEYDOWN
+        int meta = (int)event.getMetaState();
+        boolean ctrl = (meta & ctrlKeyCode) != 0 ;
+        if(ctrl)
+        {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keycode == KeyEvent.KEYCODE_S )
+            {
+                save();
+                return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)
@@ -598,7 +667,7 @@ public class JecEditor extends Activity
             case KeyEvent.KEYCODE_VOLUME_UP:
                 if(!hideToolbar)
                 {
-                    toolbarbox_LinearLayout.setVisibility(View.GONE);
+                    toolbar.setVisibility(View.GONE);
                     hideToolbar = true;
                     Toast.makeText(this, R.string.volume_up_toolbar_msg, Toast.LENGTH_LONG).show();
                 }else if(!fullScreen)
@@ -611,7 +680,7 @@ public class JecEditor extends Activity
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 if(hideToolbar)
                 {
-                    toolbarbox_LinearLayout.setVisibility(View.VISIBLE);
+                    toolbar.setVisibility(View.VISIBLE);
                     hideToolbar = false;
                 }else if(fullScreen)
                 {
@@ -635,10 +704,6 @@ public class JecEditor extends Activity
                 }
                 find("next");
                 return true;
-            /*case KeyEvent.KEYCODE_TAB:
-                
-                insert_text("\t");
-                return true;*/
         }
         return super.onKeyUp(keyCode, event);
     }
@@ -706,7 +771,7 @@ public class JecEditor extends Activity
      */
     public void find(String direction)
     {
-        String keyword = findEditText.getText().toString().trim();
+        String keyword = findEditText.getText().toString();
         if("".equals(keyword))
         {
             return;
@@ -742,8 +807,8 @@ public class JecEditor extends Activity
         @Override
         public void onClick(View v)
         {
-            String searchText = findEditText.getText().toString().trim();
-            String replaceText = replaceEditText.getText().toString().trim();
+            String searchText = findEditText.getText().toString();
+            String replaceText = replaceEditText.getText().toString();
             if("".equals(searchText))
             {
                 return;
@@ -1169,6 +1234,8 @@ public class JecEditor extends Activity
             menu.add(0, R.id.to_lower, 0, R.string.to_lower).setOnMenuItemClickListener(handler);
             // 转为大写
             menu.add(0, R.id.to_upper, 0, R.string.to_upper).setOnMenuItemClickListener(handler);
+            // 插入时间
+            menu.add(0, R.id.insert_datetime, 0, getString(R.string.insert_datetime)+TimeUtil.getDate()).setOnMenuItemClickListener(handler);
             if(mHideSoftKeyboard)
             {
                 // 显示输入法
@@ -1251,6 +1318,9 @@ public class JecEditor extends Activity
                     int len = mEditText.getText().length();
                     mEditText.setSelection(len, len);
                     break;
+                case R.id.insert_datetime:
+                    insert_text(TimeUtil.getDate());
+                    break;
             }
 
             return true; // true表示完成当前item的click处理，不再传递到父类处理
@@ -1260,10 +1330,9 @@ public class JecEditor extends Activity
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
+        //Toast.makeText(this, "onCreateOptionsMenu", Toast.LENGTH_LONG).show();
         //必须有菜单被创建，不然点menu按钮，只弹出一次菜单
         getMenuInflater().inflate(R.menu.main, menu);
-        mMenu = new JecMenu(JecEditor.this);
-        mMenu.setOnMenuItemSelectedListener(mOnMenuItemSelectedListener);
 
         mMenu.show();
         return true;
@@ -1271,6 +1340,7 @@ public class JecEditor extends Activity
     
     @Override
     public boolean onMenuOpened(int featureId, Menu menu) {
+        //Toast.makeText(this, "onMenuOpened", Toast.LENGTH_LONG).show();
         mMenu.show();
         return false;// 返回为true 则显示系统menu
     }
@@ -1381,17 +1451,29 @@ public class JecEditor extends Activity
 
     private void saveHistory()
     {
+        SharedPreferences sp;
+        Editor editor;
         if(mEditText.getPath() != null && !"".equals(mEditText.getPath()))
         {
             int selstart = mEditText.getSelectionStart();
             int selend = mEditText.getSelectionEnd();
 
-            SharedPreferences sp = getSharedPreferences(PREF_HISTORY, MODE_PRIVATE);
-            Editor editor = sp.edit();
+            sp = getSharedPreferences(PREF_HISTORY, MODE_PRIVATE);
+            editor = sp.edit();
             editor.putString(mEditText.getPath(), String.format("%d,%d,%d,%d,%s", selstart, selend, System.currentTimeMillis(), mEditText.getLineBreak(), mEditText.getEncoding()));
             editor.commit();
         }
-        mPref.edit().putString("last_file", mEditText.getPath()).commit();
+        
+        sp = getSharedPreferences(PREF_LAST_FILE, MODE_PRIVATE);
+        editor = sp.edit();
+        editor.clear();
+        //mPref.edit().putString("last_file", mEditText.getPath()).commit();
+        ArrayList<String> paths = mTabHost.getAllPath();
+        for(String path : paths)
+        {
+            editor.putString(path, path);
+        }
+        editor.commit();
     }
 
 }

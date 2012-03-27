@@ -135,6 +135,13 @@ public class Options extends PreferenceActivity
         cate.setEnabled(mSP.getBoolean("use_custom_hl_color", false));
         CheckBoxPreference uchc = (CheckBoxPreference) findPreference("use_custom_hl_color");
         uchc.setOnPreferenceChangeListener(mOnHighlightChange);
+        
+        ListPreference csPref = (ListPreference) findPreference("hl_colorscheme");
+        String[] csNames = ColorScheme.getSchemeNames();
+        if(csNames == null)
+            csNames = new String[]{"Default"};
+        csPref.setEntries(csNames);
+        csPref.setEntryValues(csNames);
 
     }
 

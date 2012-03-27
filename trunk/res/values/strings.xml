@@ -152,4 +152,8 @@ You should have received a copy of the GNU General Public License along with thi
     <string name="tab_close_other">Close Other Tabs</string>
     <string name="tab_close_right">Close Right Tabs</string>
     <string name="tab_close_all">Close All Tabs</string>
+    <string name="insert_datetime">Insert Time:</string>
+    <string name="default_color_scheme">System default</string>
+    <string name="color_scheme">Color Scheme</string>
+    <string name="touch_zoom">Touch zoom the text size</string>
 </resources>

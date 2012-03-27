@@ -3,6 +3,6 @@
     android:id="@+id/RelativeLayout_Item"
     android:layout_width="wrap_content" android:layout_height="wrap_content">
     <ImageView android:id="@+id/symbol_iv"
-        android:layout_width="32dip"
-        android:layout_height="32dip"></ImageView>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"></ImageView>
 </RelativeLayout>

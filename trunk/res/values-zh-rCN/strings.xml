@@ -147,4 +147,8 @@
     <string name="tab_close_other">关闭其它标签</string>
     <string name="tab_close_right">关闭右侧标签</string>
     <string name="tab_close_all">关闭全部标签</string>
+    <string name="insert_datetime">插入时间：</string>
+    <string name="default_color_scheme">系统默认</string>
+    <string name="color_scheme">色彩方案</string>
+    <string name="touch_zoom">触摸放大缩小文字大小</string>
 </resources>

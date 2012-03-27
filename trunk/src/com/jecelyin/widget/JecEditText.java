@@ -29,6 +29,7 @@ import com.jecelyin.util.FileUtil;
 import com.jecelyin.util.TextUtil;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -48,6 +49,7 @@ import android.text.method.Touch;
 import android.text.style.ParagraphStyle;
 import android.text.style.TabStopSpan;
 import android.util.AttributeSet;
+import android.util.FloatMath;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -70,6 +72,8 @@ public class JecEditText extends EditText
     private Path[] mWhiteSpacePaths = new Path[]{ mTabPath, mLineBreakPath };
     private TextPaint mTextPaint;
     private TextPaint mWorkPaint;
+    /** 缩放比例 */
+
     private int paddingLeft = 0;
     private int lastPaddingLeft = 0;
     private int realLineNum = 0;
@@ -88,28 +92,47 @@ public class JecEditText extends EditText
     private int mLineNumberWidth = 0; // 行数栏宽度
     private int mLineNumberLength = 0; // 行数字数
     private ArrayList<Integer> mLastEditBuffer = new ArrayList<Integer>();
-    private final static int LAST_EDIT_DISTANCE_LIMIT = 20; //最后编辑位置距离限制，不做同行判断
-    private int mLastEditIndex = -1; //最后编辑位置功能的游标
+    private final static int LAST_EDIT_DISTANCE_LIMIT = 20; // 最后编辑位置距离限制，不做同行判断
+    private int mLastEditIndex = -1; // 最后编辑位置功能的游标
 
     private final static String TAG = "JecEditText";
     private VelocityTracker mVelocityTracker;
     private FlingRunnable mFlingRunnable;
-    
+
     private String current_encoding = "UTF-8"; // 当前文件的编码,用于正确回写文件
     private String current_path = ""; // 当前打开的文件路径
     private String current_ext = ""; // 当前扩展名
-    private int current_linebreak=0; //换行字符
-    private int src_text_length; //原始文本内容长度
+    private int current_linebreak = 0; // 换行字符
+    private int src_text_length; // 原始文本内容长度
     private boolean mNoWrapMode = false;
-    private int mLineNumX = 0; //行数位置
-    
+    private int mLineNumX = 0; // 行数位置
+
     private Highlight mHighlight;
+    /**
+     * Touch mode
+     */
+    public static boolean TOUCH_ZOOM_ENABLED = true;
+    private static final int TOUCH_DRAG_START_MODE = 2;
+    private static final int TOUCH_DONE_MODE = 7;
+    private int mTouchMode = TOUCH_DONE_MODE;
+    /** 记录按下第二个点距第一个点的距离 */
+    private float oldDist;
+    /** 最小字体 */
+    private static final float MIN_TEXT_SIZE = 10f;
+    /** 最大字体 */
+    private static final float MAX_TEXT_SIZE = 32.0f;
+    /** 缩放比例 */
+    private float scale = 0.5f;
+    /** 设置字体大小 */
+    private float mTextSize;
+    // whether support multi-touch
+    private boolean mSupportMultiTouch;
 
     // we need this constructor for LayoutInflater
     public JecEditText(Context context, AttributeSet attrs)
     {
         super(context, attrs);
-        //init();
+        // init();
     }
 
     private static class JecSaveState extends BaseSavedState
@@ -154,7 +177,7 @@ public class JecEditText extends EditText
     @Override
     public void onRestoreInstanceState(Parcelable state)
     {
-        //Log.v("EditText", String.valueOf(state instanceof JecSaveState));
+        // Log.v("EditText", String.valueOf(state instanceof JecSaveState));
         if(!(state instanceof JecSaveState))
         {
             super.onRestoreInstanceState(state);
@@ -196,10 +219,10 @@ public class JecEditText extends EditText
         mFastScroller = new FastScroller(getContext(), this);
         addTextChangedListener(mUndoWatcher);
         clearFocus();
-        
-        float textSize = mTextPaint.getTextSize();
 
-        mLineNumberPaint.setTextSize(textSize-2);
+        mTextSize = mTextPaint.getTextSize();
+
+        mLineNumberPaint.setTextSize(mTextSize - 2);
         mLineNumberPaint.setTypeface(Typeface.MONOSPACE);
         mLineNumberPaint.setStrokeWidth(1);
         mLineNumberPaint.setColor(Color.parseColor(ColorScheme.color_font));
@@ -249,14 +272,18 @@ public class JecEditText extends EditText
         mTabPath.lineTo(width * 0.25F, -textHeight * 0.35F);
         // 绘制箭头上面部分
         mTabPath.lineTo(width * 0.15F, -textHeight * 0.2F);
+        // 判断设备是否支持多点触摸
+        PackageManager pm = getContext().getPackageManager();
+        mSupportMultiTouch = pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH);
     }
-    
+
     private OnTextChangedListener mOnTextChangedListener = null;
+
     public interface OnTextChangedListener
     {
         void onTextChanged(JecEditText mEditText);
     }
-    
+
     public void setOnTextChangedListener(OnTextChangedListener l)
     {
         mOnTextChangedListener = l;
@@ -267,11 +294,11 @@ public class JecEditText extends EditText
 
         public void onTextChanged(CharSequence s, int start, int before, int count)
         {
-            //Log.v(TAG, "isLoading:" + JecEditor.isLoading);
+            // Log.v(TAG, "isLoading:" + JecEditor.isLoading);
             if(JecEditor.isLoading)
                 return;
             mHighlight.redraw();
-            //撤销，重做
+            // 撤销，重做
             if(lastChange != null)
             {
                 if(count < UndoParcel.MAX_SIZE)
@@ -291,14 +318,14 @@ public class JecEditText extends EditText
                 }
                 lastChange = null;
             }
-            //记住最后修改位置
+            // 记住最后修改位置
             int bufSize = mLastEditBuffer.size();
             int lastLoc = 0;
             if(bufSize != 0)
             {
-                lastLoc = mLastEditBuffer.get(bufSize-1);
+                lastLoc = mLastEditBuffer.get(bufSize - 1);
             }
-            //不在附近位置才记住它，不做是否同一行判断，性能问题
+            // 不在附近位置才记住它，不做是否同一行判断，性能问题
             if(Math.abs(start - lastLoc) > LAST_EDIT_DISTANCE_LIMIT)
             {
                 mLastEditBuffer.add(start);
@@ -310,7 +337,7 @@ public class JecEditText extends EditText
 
         public void beforeTextChanged(CharSequence s, int start, int count, int after)
         {
-            //Log.v(TAG, "isLoading:" + JecEditor.isLoading);
+            // Log.v(TAG, "isLoading:" + JecEditor.isLoading);
             if(JecEditor.isLoading)
                 return;
             if(mUndoRedo)
@@ -337,7 +364,6 @@ public class JecEditText extends EditText
         }
     };
 
-
     private boolean equalsCharSequence(CharSequence s1, CharSequence s2)
     {
         if(s1 == null || s2 == null)
@@ -356,24 +382,24 @@ public class JecEditText extends EditText
         if(mOnTextChangedListener != null)
             mOnTextChangedListener.onTextChanged(this);
     }
-    
+
     public boolean canUndo()
     {
         return mUndoParcel.canUndo();
     }
-    
+
     public boolean canRedo()
     {
         return mRedoParcel.canUndo();
     }
-    
+
     public void show()
     {
         setVisibility(View.VISIBLE);
         if(mOnTextChangedListener != null)
             mOnTextChangedListener.onTextChanged(this);
     }
-    
+
     public void hide()
     {
         setVisibility(View.GONE);
@@ -427,7 +453,7 @@ public class JecEditText extends EditText
     private void setLineNumberWidth(int lastline)
     {
         mLineNumberWidth = (int) mLineNumberPaint.measureText(lastline + "|");
-        
+
         mLineNumber = lastline;
         mLineNumberLength = Integer.toString(lastline).length();
         setShowLineNum(mShowLineNum);
@@ -453,17 +479,19 @@ public class JecEditText extends EditText
     {
         mShowWhiteSpace = b;
     }
-    
+
     public void setText2(CharSequence text)
     {
-        try {
+        try
+        {
             super.setText(text);
-        } catch (OutOfMemoryError e) {
+        }catch (OutOfMemoryError e)
+        {
             Toast.makeText(getContext(), R.string.out_of_memory, Toast.LENGTH_SHORT).show();
-            //Log.d(TAG, e.getMessage());
+            // Log.d(TAG, e.getMessage());
         }
     }
-    
+
     public String getString()
     {
         return getText().toString();
@@ -493,37 +521,44 @@ public class JecEditText extends EditText
             mVelocityTracker = VelocityTracker.obtain();
         }
         mVelocityTracker.addMovement(event);
-        //是否按住滚动条拖动
+        // 是否按住滚动条拖动
         if(mFastScroller != null)
         {
             boolean intercepted;
             intercepted = mFastScroller.onTouchEvent(event);
-            //Log.v(TAG, "intercepted2:"+intercepted);
+            // Log.v(TAG, "intercepted2:"+intercepted);
             if(intercepted)
             {
                 return true;
             }
             intercepted = mFastScroller.onInterceptTouchEvent(event);
-            //Log.v(TAG, "intercepted1:"+intercepted);
+            // Log.v(TAG, "intercepted1:"+intercepted);
             if(intercepted)
             {
                 return true;
             }
-            
         }
-        //处理文本快速顺畅地滚动
+
+        // 处理文本快速顺畅地滚动
         switch(event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
+                if(TOUCH_ZOOM_ENABLED)
+                {
+                    mTouchMode = TOUCH_DRAG_START_MODE;
+                    oldDist = calc_spacing(event);
+                }
+                
                 if(mFlingRunnable != null)
                 {
                     mFlingRunnable.endFling();
                     cancelLongPress();
                 }
-
                 break;
             case MotionEvent.ACTION_UP:
-                
+                // cancelLongPress();
+                mTouchMode = TOUCH_DONE_MODE;
+
                 int mMinimumVelocity = ViewConfiguration.get(getContext()).getScaledMinimumFlingVelocity();
                 int mMaximumVelocity = ViewConfiguration.get(getContext()).getScaledMaximumFlingVelocity();
                 mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
@@ -531,15 +566,21 @@ public class JecEditText extends EditText
 
                 if(Math.abs(initialVelocity) > mMinimumVelocity)
                 {
-                    if(mFlingRunnable == null)
+                    try
                     {
-                        mFlingRunnable = new FlingRunnable(getContext());
+                        if(mFlingRunnable == null)
+                        {
+                            mFlingRunnable = new FlingRunnable(getContext());
+                        }
+                        mHighlight.stop();
+                        mFlingRunnable.start(this, -initialVelocity);
+                    }catch (Exception e)
+                    {
                     }
-                    mHighlight.stop();
-                    mFlingRunnable.start(this, -initialVelocity);
                 }else
                 {
-                    moveCursorToVisibleOffset();
+                    mHighlight.redraw();
+                    //moveCursorToVisibleOffset();
                 }
 
                 if(mVelocityTracker != null)
@@ -547,11 +588,84 @@ public class JecEditText extends EditText
                     mVelocityTracker.recycle();
                     mVelocityTracker = null;
                 }
-                
+
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if(TOUCH_ZOOM_ENABLED && mTouchMode == TOUCH_DRAG_START_MODE && mSupportMultiTouch && event.getPointerCount() >= 2)
+                {
+                    cancelLongPress();
+                    //mTouchMode = TOUCH_DRAG_MODE;
+                    // 正在移动的点距初始点的距离
+                    float newDist = calc_spacing(event);
+
+                    if(Math.abs(newDist - oldDist) > 10f)
+                    {
+                        if(newDist > oldDist)
+                        {
+                            zoomOut();
+                        }else if(newDist < oldDist)
+                        {
+                            zoomIn();
+                        }
+                        oldDist = newDist;
+                    }
+
+                }
                 break;
         }
+        boolean res;
+        try
+        {
+            res = super.onTouchEvent(event);
+        }catch (Exception e)
+        {
+            res = true;
+        }
+        return res;
+    }
 
-        return super.onTouchEvent(event);
+    /**
+     * 求出2个触点间的 距离
+     * 
+     * @param event
+     * @return
+     */
+    private float calc_spacing(MotionEvent event)
+    {
+        if(event.getPointerCount() < 2)
+            return 0;
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return FloatMath.sqrt(x * x + y * y);
+    }
+
+    /**
+     * 放大
+     */
+    protected void zoomOut()
+    {
+        mTextSize += scale;
+
+        if(mTextSize > MAX_TEXT_SIZE)
+        {
+            mTextSize = MAX_TEXT_SIZE;
+        }
+        setTextSize(mTextSize);
+        mLineNumberPaint.setTextSize(mTextSize - 2);
+    }
+
+    /**
+     * 缩小
+     */
+    protected void zoomIn()
+    {
+        mTextSize -= scale;
+        if(mTextSize < MIN_TEXT_SIZE)
+        {
+            mTextSize = MIN_TEXT_SIZE;
+        }
+        setTextSize(mTextSize);
+        mLineNumberPaint.setTextSize(mTextSize - 2);
     }
 
     /**
@@ -606,14 +720,15 @@ public class JecEditText extends EditText
 
             if(mWidget != null)
             {
-                try {
+                try
+                {
                     mWidget.removeCallbacks(this);
                     mWidget.moveCursorToVisibleOffset();
-                } catch (Exception e) {
+                }catch (Exception e)
+                {
                     e.printStackTrace();
                 }
-                
-                
+
                 mWidget = null;
             }
 
@@ -636,22 +751,25 @@ public class JecEditText extends EditText
                     int y = scroller.getCurrY();
 
                     Layout layout = mWidget.getLayout();
+                    if(layout == null)
+                        break;
 
                     int padding;
-                    try {
+                    try
+                    {
                         padding = mWidget.getTotalPaddingTop() + mWidget.getTotalPaddingBottom();
-                    } catch(Exception e) {
+                    }catch (Exception e)
+                    {
                         padding = 0;
                     }
-                    
 
                     y = Math.min(y, layout.getHeight() - (mWidget.getHeight() - padding));
                     y = Math.max(y, 0);
 
                     Touch.scrollTo(mWidget, layout, x, y);
                     int delta = mLastFlingY - y;
-                    //Log.d(TAG, "delta:"+delta);
-                    if(Math.abs(delta) <= 5)
+                    // Log.d(TAG, "delta:"+delta);
+                    if(Math.abs(delta) <= 3)
                     {
                         mWidget.mHighlight.redraw();
                     }
@@ -760,28 +878,29 @@ public class JecEditText extends EditText
         TextPaint paint = mTextPaint;
 
         ParagraphStyle[] spans = NO_PARA_SPANS;
-        
-        //Log.d("Highlight", first+"-"+last+"="+dtop+":"+dbottom);
-        //这里不要使用getScrollY，因为修改时，光标会变，滚动条不会变，但是高亮需要变
-        int previousLineEnd2 = mLayout.getLineStart(first >= 3 ? first-3 : 0);
-        mHighlight.render(mText, previousLineEnd2,  mLayout.getLineStart(last+3 > lineCount ? lineCount : last+3));
+
+        // Log.d("Highlight", first+"-"+last+"="+dtop+":"+dbottom);
+        // 这里不要使用getScrollY，因为修改时，光标会变，滚动条不会变，但是高亮需要变
+        int previousLineEnd2 = mLayout.getLineStart(first >= 3 ? first - 3 : 0);
+        mHighlight.render(mText, previousLineEnd2, mLayout.getLineStart(last + 3 > lineCount ? lineCount : last + 3));
 
         if(!mShowLineNum && !mShowWhiteSpace)
         {
             return;
         }
-        
+
         // 显示行数
         int lastline = lineCount < 1 ? 1 : lineCount;
         if(lastline != mLineNumber)
         {
             setLineNumberWidth(lastline);
         }
-        //设置显示行号的位置
+        // 设置显示行号的位置
         if(mNoWrapMode)
         {
             mLineNumX = mLineNumberWidth + getScrollX();
-        } else {
+        }else
+        {
             mLineNumX = mLineNumberWidth;
         }
 
@@ -819,7 +938,7 @@ public class JecEditText extends EditText
                     lineString = "      " + realLineNum;
                     mLineStr.put(realLineNum, lineString);
                 }
-                c.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), mLineNumX-mLineNumberWidth, mTextPaint.getTextSize(), mLineNumberPaint);
+                c.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), mLineNumX - mLineNumberWidth, mTextPaint.getTextSize(), mLineNumberPaint);
             }
             return;
         }
@@ -881,7 +1000,7 @@ public class JecEditText extends EditText
                     lineString = "      " + realLineNum;
                     mLineStr.put(realLineNum, lineString);
                 }
-                canvas.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), mLineNumX-mLineNumberWidth + 1, y-2, mLineNumberPaint);
+                canvas.drawText(lineString, lineString.length() - mLineNumberLength, lineString.length(), mLineNumX - mLineNumberWidth + 1, y - 2, mLineNumberPaint);
                 realLineNum++;
                 hasNewline = false;
             }
@@ -909,7 +1028,7 @@ public class JecEditText extends EditText
 
                     if(j != there && at == '\t' && mShowWhiteSpace)
                     {
-                        if(x+h > mLineNumX)
+                        if(x + h > mLineNumX)
                         {
                             canvas.translate(x + h, y);
                             canvas.drawPath(mWhiteSpacePaths[0], mWhiteSpacePaint);
@@ -920,7 +1039,7 @@ public class JecEditText extends EditText
                     {
                         if(end < textLength && mText.charAt(end) == '\n')
                         {
-                            if(mShowWhiteSpace && x+h > mLineNumX)
+                            if(mShowWhiteSpace && x + h > mLineNumX)
                             {
                                 canvas.translate(x + h, y);
                                 canvas.drawPath(mWhiteSpacePaths[1], mWhiteSpacePaint);
@@ -1092,7 +1211,7 @@ public class JecEditText extends EditText
 
         return false;
     }
-    
+
     public boolean gotoBackEditLocation()
     {
         if(mLastEditIndex < 1)
@@ -1102,7 +1221,7 @@ public class JecEditText extends EditText
         setSelection(offset, offset);
         return true;
     }
-    
+
     public boolean gotoForwardEditLocation()
     {
         if(mLastEditIndex >= mLastEditBuffer.size())
@@ -1112,19 +1231,19 @@ public class JecEditText extends EditText
         setSelection(offset, offset);
         return true;
     }
-    
+
     public boolean isCanBackEditLocation()
     {
         if(mLastEditIndex < 1)
             return false;
         return mLastEditIndex < mLastEditBuffer.size();
     }
-    
+
     public boolean isCanForwardEditLocation()
     {
-        if(mLastEditIndex >= mLastEditBuffer.size()-1)
+        if(mLastEditIndex >= mLastEditBuffer.size() - 1)
             return false;
-        //return mLastEditIndex < mLastEditBuffer.size();
+        // return mLastEditIndex < mLastEditBuffer.size();
         return true;
     }
 
@@ -1178,12 +1297,12 @@ public class JecEditText extends EditText
         }
         return result;
     }
-    
+
     public void setEncoding(String encoding)
     {
         current_encoding = encoding;
     }
-    
+
     public void setPath(String path)
     {
         if("".equals(path))
@@ -1199,47 +1318,47 @@ public class JecEditText extends EditText
         }
         setCurrentFileExt(FileUtil.getExt(path));
     }
-    
+
     public void setCurrentFileExt(String ext)
     {
         current_ext = ext;
-        
+
         mHighlight.redraw();
         mHighlight.setSyntaxType(current_ext);
     }
-    
+
     public String getCurrentFileExt()
     {
         return current_ext;
     }
-    
+
     public String getEncoding()
     {
         return current_encoding;
     }
-    
+
     public String getPath()
     {
         return current_path;
     }
-    
+
     public void setTextFinger()
     {
         src_text_length = getText().length();
     }
-    
+
     public boolean isTextChanged()
     {
-        //简单判断一下内容是否改变
+        // 简单判断一下内容是否改变
         return src_text_length != getText().length();
     }
-    
+
     public void setHorizontallyScrolling(boolean whether)
     {
         mNoWrapMode = whether;
         super.setHorizontallyScrolling(whether);
     }
-    
+
     public void setPaddingLeft(int padding)
     {
         if(lastPaddingLeft == padding)
@@ -1249,12 +1368,12 @@ public class JecEditText extends EditText
         lastPaddingLeft = padding;
         setPadding(padding, 0, getPaddingRight(), getPaddingBottom());
     }
-    
+
     public void setLineBreak(int linebreak)
     {
         current_linebreak = linebreak;
     }
-    
+
     public int getLineBreak()
     {
         return current_linebreak;

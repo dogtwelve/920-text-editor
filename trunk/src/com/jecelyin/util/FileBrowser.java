@@ -25,7 +25,6 @@ import java.io.IOException;
 //import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-import java.util.Date;
 import java.util.List;
 
 import android.net.Uri;
@@ -80,6 +79,7 @@ public class FileBrowser extends ListActivity
     private Spinner linebreakSpinner;
     private Spinner encoding_list;
     private static int OPEN_WITH_CODE = 0;
+    private int lastPos;
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -177,7 +177,7 @@ public class FileBrowser extends ListActivity
         } catch (Exception e) {
             return false;
         }
-
+        lastPos = position;
         int itemId = item.getItemId();
         switch(itemId)
         {
@@ -321,6 +321,16 @@ public class FileBrowser extends ListActivity
 
         fileListAdapter = new FileListAdapter(this, R.layout.file_list, files);
         setListAdapter(fileListAdapter);
+        if(lastPos > 0)
+        {
+            if(files.size() > lastPos)
+            {
+                setSelection(lastPos);
+            }else if(--lastPos < files.size()){
+                setSelection(lastPos);
+            }
+        }
+        
     }
     
 /*    private Comparator<FileLists> comparator = new Comparator<FileLists>() {
@@ -437,7 +447,8 @@ class FileListAdapter extends ArrayAdapter<File>
         //textStringBuilder.append((new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")).format(new Date(file.lastModified())))
         //.append("   ");
         if(!"..".equals(title))
-            textStringBuilder.append(new Date(file.lastModified()).toLocaleString()).append("  ");
+            textStringBuilder.append(TimeUtil.getDate(file.lastModified())).append("   ");
+            //textStringBuilder.append(new Date(file.lastModified()).toLocaleString()).append("  ");
         if(file.length() > 0)
             textStringBuilder.append(FileUtil.byteCountToDisplaySize(file.length()));
         holder.f_text.setText(textStringBuilder.toString());

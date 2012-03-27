@@ -71,6 +71,8 @@ public class AsyncReadFile
             }
             if("".equals(encoding))
                 encoding = getEncoding(fileString);
+            if ("GB18030".equals(encoding))
+                encoding = "GBK";
             mData = Highlight.readFile(fileString, encoding);
             if(lineBreak == 2)
             {//unix
@@ -170,7 +172,7 @@ public class AsyncReadFile
         detector.reset();
         detector.destroy();*/
         
-        String encoding = CharsetDetector.getEncoding(path);
+        String encoding = CharsetDetector.getEncoding(path).trim().toUpperCase();
         
         if ("".equals(encoding))
         {

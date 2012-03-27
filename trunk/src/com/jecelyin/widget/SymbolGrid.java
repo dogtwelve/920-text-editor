@@ -17,30 +17,34 @@ package com.jecelyin.widget;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.jecelyin.editor.R;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.SimpleAdapter;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
-public class SymbolGrid extends LinearLayout
+public class SymbolGrid extends RelativeLayout
 {
     private ArrayList<HashMap<String, Object>> mButtons;
     private OnSymbolClickListener mListener;
     private ImageView closeButton;
     private GridView mGridView;
+    private LinearLayout mDrager;
     private int mTop, mRight, mBottom, mLeft;
 
     public SymbolGrid(Context context)
@@ -51,45 +55,12 @@ public class SymbolGrid extends LinearLayout
     public SymbolGrid(Context context, AttributeSet attrs)
     {
         super(context, attrs);
-        //inflate(context, R.layout.symbol_grid, this);
-        init();
-    }
-    
-    private void init()
-    {
-        LinearLayout.LayoutParams layoutParams;
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-
-        int dip6 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 9, dm);
-        int dip10 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, dm);
-        //自身属性
-        /*layoutParams = new LayoutParams((int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 260, dm), LayoutParams.WRAP_CONTENT);
-        setLayoutParams(layoutParams);
-        setBackgroundColor(Color.parseColor("#b0000000"));
-        setOrientation(LinearLayout.VERTICAL);
-        setClickable(true);
-        setFocusable(true);
-        setFocusableInTouchMode(true);*/
-        //关闭按钮
-        closeButton = new ImageView(getContext());
-        closeButton.setImageResource(R.drawable.dialog_close);
-        layoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        layoutParams.gravity = Gravity.RIGHT;
-        layoutParams.setMargins(dip6, dip6, dip6, dip6);
-        closeButton.setLayoutParams(layoutParams);
-        addView(closeButton);
-        //符号表格
-        mGridView = new GridView(getContext());
-        layoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        mGridView.setLayoutParams(layoutParams);
-        mGridView.setHorizontalSpacing(dip10);
-        mGridView.setVerticalSpacing(dip10);
-        mGridView.setNumColumns(6);
-        mGridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        View mView = inflate(context, R.layout.symbol_grid, this);
+        //init(context);
+        closeButton = (ImageView) mView.findViewById(R.id.iv_close);
+        mGridView = (GridView) mView.findViewById(R.id.gridview);
+        mDrager = (LinearLayout) mView.findViewById(R.id.drag);
         appendToolbarButton();
-        addView(mGridView);
-        setPadding(dip10, dip10, dip10, dip10);
-        invalidate();
     }
 
     public static interface OnSymbolClickListener
@@ -105,34 +76,34 @@ public class SymbolGrid extends LinearLayout
     private void appendToolbarButton()
     {
         mButtons = new ArrayList<HashMap<String, Object>>();
-        mButtons.add(buildToolbarButton(R.drawable.tool_opn_curly1, "{", "tool_opn_curly1"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_cls_curly1, "}", "tool_cls_curly"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_less1, "<", "tool_less"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_more1, ">", "tool_more"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_semi1, ";", "tool_semi"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_situation1, "\"", "tool_situation"));
+        mButtons.add(buildToolbarButton(0, "{"));
+        mButtons.add(buildToolbarButton(0, "}"));
+        mButtons.add(buildToolbarButton(0, "<"));
+        mButtons.add(buildToolbarButton(0, ">"));
+        mButtons.add(buildToolbarButton(0, ";"));
+        mButtons.add(buildToolbarButton(0, "\""));
 
-        mButtons.add(buildToolbarButton(R.drawable.tool_sl_brack1, "(", "tool_sl_brack"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_sr_brack1, ")", "tool_sr_brack"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_slash1, "/", "tool_slash"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_escape1, "\\", "tool_escape"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_single_quotes1, "'", "tool_single_quotes"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_percent1, "%", "tool_percent"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_opn_brack1, "[", "tool_opn_brack"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_cls_brack1, "]", "tool_cls_brack"));
+        mButtons.add(buildToolbarButton(0, "("));
+        mButtons.add(buildToolbarButton(0, ")"));
+        mButtons.add(buildToolbarButton(0, "/"));
+        mButtons.add(buildToolbarButton(0, "\\"));
+        mButtons.add(buildToolbarButton(0, "'"));
+        mButtons.add(buildToolbarButton(0, "%"));
+        mButtons.add(buildToolbarButton(0, "["));
+        mButtons.add(buildToolbarButton(0, "]"));
         
-        mButtons.add(buildToolbarButton(R.drawable.tool_line1, "|", "tool_line"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_hash1, "#", "tool_hash"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_equals1, "=", "tool_equals"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_dollar1, "$", "tool_dollar"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_colon1, ":", "tool_colon"));
+        mButtons.add(buildToolbarButton(0, "|"));
+        mButtons.add(buildToolbarButton(0, "#"));
+        mButtons.add(buildToolbarButton(0, "="));
+        mButtons.add(buildToolbarButton(0, "$"));
+        mButtons.add(buildToolbarButton(0, ":"));
 
-        mButtons.add(buildToolbarButton(R.drawable.tool_comma1, ",", "tool_comma"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_and1, "&", "tool_and"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_question, "?", "tool_question"));
+        mButtons.add(buildToolbarButton(0, ","));
+        mButtons.add(buildToolbarButton(0, "&"));
+        mButtons.add(buildToolbarButton(0, "?"));
         
-        mButtons.add(buildToolbarButton(R.drawable.tool_tab1, "\t", "tool_tab"));
-        mButtons.add(buildToolbarButton(R.drawable.tool_enter1, "\n", "tool_enter"));
+        mButtons.add(buildToolbarButton(0, "\t"));
+        mButtons.add(buildToolbarButton(0, "\n"));
 
         closeButton.setOnClickListener(new OnClickListener() {
              @Override
@@ -142,7 +113,7 @@ public class SymbolGrid extends LinearLayout
              }
         });
 
-        mGridView.setAdapter(new SimpleAdapter(getContext(), mButtons, R.layout.symbol_item, new String[]{ "res" }, new int[]{ R.id.symbol_iv }));
+        mGridView.setAdapter(new GridAdapter(getContext(), mButtons));
         mGridView.setOnItemClickListener(new OnItemClickListener() {
 
             @Override
@@ -154,7 +125,7 @@ public class SymbolGrid extends LinearLayout
             }
         });
         
-        setOnTouchListener(new OnTouchListener() {
+        mDrager.setOnTouchListener(new OnTouchListener() {
             private int lastX, lastY; // 记录移动的最后的位置
             
             @Override
@@ -173,11 +144,11 @@ public class SymbolGrid extends LinearLayout
                         // 移动中动态设置位置
                         int dx = (int) event.getRawX() - lastX;
                         int dy = (int) event.getRawY() - lastY;
-                        mLeft = v.getLeft() + dx;
-                        mTop = v.getTop() + dy;
-                        mRight = v.getRight() + dx;
-                        mBottom = v.getBottom() + dy;
-                        v.layout(mLeft, mTop, mRight, mBottom);
+                        mLeft = getLeft() + dx;
+                        mTop = getTop() + dy;
+                        mRight = getRight() + dx;
+                        mBottom = getBottom() + dy;
+                        layout(mLeft, mTop, mRight, mBottom);
                         // 将当前的位置再次设置
                         lastX = (int) event.getRawX();
                         lastY = (int) event.getRawY();
@@ -190,7 +161,7 @@ public class SymbolGrid extends LinearLayout
         });
     }
 
-    private HashMap<String, Object> buildToolbarButton(int bg, final String symbol, String id)
+    private HashMap<String, Object> buildToolbarButton(Object bg, final String symbol)
     {
         HashMap<String, Object> map = new HashMap<String, Object>();
         map.put("symbol", symbol);
@@ -207,4 +178,65 @@ public class SymbolGrid extends LinearLayout
         super.setVisibility(visibility);
     }
     
+    private class GridAdapter extends BaseAdapter
+    {
+        private List<? extends Map<String, ?>> mData;
+        private Context mContext;
+        
+        public GridAdapter(Context context, List<? extends Map<String, ?>> data) {
+            mData = data;
+            mContext = context;
+        }
+        
+        @Override
+        public int getCount()
+        {
+            return mData.size();
+        }
+
+        @Override
+        public Object getItem(int position)
+        {
+            return mData.get(position);
+        }
+
+        @Override
+        public long getItemId(int position)
+        {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent)
+        {
+            View v;
+            if (convertView == null) {
+                //v = mInflater.inflate(mResource, parent, false);
+                final Map<String, ?> dataSet = mData.get(position);
+                int res = (Integer) dataSet.get("res");
+                if(res > 0)
+                {
+                    //如果是图片资源
+                    v = new ImageView(mContext);
+                    v.setBackgroundResource(res);
+                } else {
+                    String symbol = (String) dataSet.get("symbol");
+                    if("\t".equals(symbol))
+                        symbol = "\\t";
+                    else if("\n".equals(symbol))
+                        symbol = "\\n";
+                    TextView tv = new TextView(mContext);
+                    tv.setTextAppearance(mContext, R.style.symbolgrid_text);
+                    tv.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
+                    tv.setText(symbol);
+                    v = tv;
+                }
+            } else {
+                v = convertView;
+            }
+
+            return v;
+        }
+        
+    }
 }

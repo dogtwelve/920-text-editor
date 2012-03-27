@@ -22,6 +22,12 @@
             android:title="@string/highlight_limit" >
         </EditTextPreference>
         <CheckBoxPreference android:key="use_custom_hl_color" android:title="@string/use_custom_hl_color" android:summary="@string/use_custom_hl_color_msg" android:defaultValue="false"/>
+        <ListPreference
+            android:defaultValue="@string/default_color_scheme"
+            android:key="hl_colorscheme"
+            android:summary="@string/request_restart"
+            android:title="@string/color_scheme" >
+        </ListPreference>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/custom_hl_color" android:key="custom_highlight_color">
         <Preference android:key="hlc_font" android:title="@string/font_color" /><Preference android:key="hlc_backgroup" android:title="@string/backgroup_color" /><Preference android:key="hlc_string" android:title="@string/string_color"/>
@@ -30,8 +36,6 @@
         <Preference android:key="hlc_tag" android:title="@string/tag_color"/>
         <Preference android:key="hlc_attr_name" android:title="@string/attr_color"/>
         <Preference android:key="hlc_function" android:title="@string/function_color"/>
-        
-        
     </PreferenceCategory>
 
 </PreferenceScreen>
