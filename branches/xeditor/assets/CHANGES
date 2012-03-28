@@ -1,3 +1,7 @@
+Version 12.3.28
+	*) Feature: new back button behavior
+	*) Feature: remember last open file scroll position
+
 Version 12.3.27
     *) Bug Fix: fixed click on the text area under the 4.0 system crash bug
 

@@ -115,6 +115,9 @@ public class FileBrowser extends ListActivity
         request_mode = mIntent.getIntExtra("mode", 0);
         isRoot = mIntent.getBooleanExtra("isRoot", false);
         editTextFilename.setText(default_filename);
+        
+        lastPos = mIntent.getIntExtra("file_pos", 0);
+        
         if(request_mode == JecEditor.FILE_BROWSER_OPEN_CODE)
         {
             LinearLayout filenameLinearLayout = (LinearLayout)findViewById(R.id.filenameLinearLayout);
@@ -350,6 +353,8 @@ public class FileBrowser extends ListActivity
             mIntent.putExtra("file", file.getPath());
             mIntent.putExtra("linebreak", linebreakSpinner.getSelectedItemPosition());
             mIntent.putExtra("encoding", encoding_list.getSelectedItemPosition());
+            lastPos = position;
+            mIntent.putExtra("file_pos", lastPos);
             setResult(RESULT_OK, mIntent);
             finish();
         }

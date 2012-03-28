@@ -84,7 +84,9 @@
     <string name="to_lower">转为小写</string>
     <string name="to_upper">转为大写</string>
     <string name="out_of_memory">无法打开文件，没有足够的内存!</string>
-    <string name="back_button_exit">按 \"返回键\" 退出程序</string>
+    <!-- string name="back_button_exit">按 \"返回键\" 退出程序</string -->
+    <string name="back_button">\"返回键\"功能</string>
+    <string name="back_button_summary">选择按下\"返回键\"时的操作</string>
     <string name="pref_sort_clicks">按使用频率排序</string>
     <string name="toolbar_rows">工具栏行数</string>
     <string name="preview_msg">预览之前必须先保存文件！</string>

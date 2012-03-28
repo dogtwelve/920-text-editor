@@ -63,6 +63,10 @@ public class Options extends PreferenceActivity
             case R.xml.options:
                 init();
                 break;
+                
+            case R.xml.other:
+            	initOther();
+            	break;
         }
     }
 
@@ -234,6 +238,25 @@ public class Options extends PreferenceActivity
                 return true;
             }
         });
+    }
+    
+    private void initOther()
+    {
+        ListPreference bbbPref = (ListPreference) findPreference("back_button");
+        
+        String[] bbbEntry = this.getResources().getStringArray(R.array.back_button_behavior);
+        String[] bbbVaule = new String[]
+        		{
+        			String.valueOf(JecEditor.BACK_BUTTON_BEHAV_EXIT_APP),
+        			String.valueOf(JecEditor.BACK_BUTTON_BEHAV_CLOSE_TAB),
+        			String.valueOf(JecEditor.BACK_BUTTON_BEHAV_EXIT_TAB),
+        			String.valueOf(JecEditor.BACK_BUTTON_BEHAV_UNDO),
+        			String.valueOf(JecEditor.BACK_BUTTON_BEHAV_DO_NOTHING)
+        		};
+        
+        bbbPref.setEntries(bbbEntry);
+        bbbPref.setEntryValues(bbbVaule);
+        bbbPref.setDefaultValue(bbbVaule[0]);
     }
 
     public static Typeface getFont(String font)

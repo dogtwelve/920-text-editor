@@ -31,11 +31,17 @@
             android:title="@string/keep_screen_on" >
         </CheckBoxPreference>
 
-        <CheckBoxPreference
+        <!-- CheckBoxPreference
             android:defaultValue="true"
             android:key="back_button_exit"
             android:title="@string/back_button_exit" >
-        </CheckBoxPreference>
+        </CheckBoxPreference -->
+        
+        <ListPreference
+            android:key="back_button"
+            android:title="@string/back_button"
+            android:summary="@string/back_button_summary" >
+        </ListPreference>
 
         <CheckBoxPreference
             android:defaultValue="false"

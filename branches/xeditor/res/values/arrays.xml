@@ -16,4 +16,12 @@
         <item>3</item>
     </string-array>
     
+    <string-array name="back_button_behavior">
+        <item>Exit App</item>
+        <item>Close current tab</item>
+        <item>Close cur tab and exit when no tab opened</item>
+        <item>Undo</item>
+        <item>Do nothing</item>
+    </string-array>
+    
 </resources>

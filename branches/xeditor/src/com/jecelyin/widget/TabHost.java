@@ -94,6 +94,16 @@ public class TabHost extends LinearLayout
         // initTabHost();
         
     }
+    
+    public int getCurrentTab()
+    {
+    	return mCurrentTab;
+    }
+    
+    public int getTabCount()
+    {
+    	return mTabSpecs.size();
+    }
 
     public void initTabHost(JecEditor parent)
     {

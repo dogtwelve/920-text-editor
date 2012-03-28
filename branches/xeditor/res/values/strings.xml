@@ -89,7 +89,9 @@ You should have received a copy of the GNU General Public License along with thi
     <string name="to_upper">Convert to uppercase</string>
     <string name="out_of_memory">Open file failed, not enough memory!</string>
     <string name="exception">Exception occurs, execution fails!</string>
-    <string name="back_button_exit">Press the \"Back button\" to exit</string>
+    <!-- string name="back_button_exit">Press the \"Back button\" to exit</string -->
+    <string name="back_button">Back button behavior</string>
+    <string name="back_button_summary">Change the back button behavior</string>
     <string name="pref_sort_clicks">Sort by clicks</string>
     <string name="toolbar_rows">Toolbar rows</string>
     <string name="preview_msg">Must be saved before preview</string>

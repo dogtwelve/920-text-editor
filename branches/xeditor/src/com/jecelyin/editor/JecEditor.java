@@ -41,6 +41,7 @@ import com.jecelyin.widget.TabHost;
 import com.jecelyin.widget.TabHost.OnTabChangeListener;
 import com.jecelyin.widget.TabHost.OnTabCloseListener;
 
+import android.R.integer;
 import android.app.Activity;
 import android.app.AlertDialog;
 /*import android.app.Notification;
@@ -58,6 +59,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -98,9 +100,18 @@ public class JecEditor extends Activity
     
     public int MAX_HIGHLIGHT_FILESIZE = 400;
     //private int org_textcontent_md5 = 0;
-    private boolean back_button_exit = true; // 按返回键退出程序
+    //private boolean back_button_exit = true; // 按返回键退出程序
     private boolean autosave = false; // 是否自动保存
     // end
+    
+    // back button behavior
+    public final static int BACK_BUTTON_BEHAV_EXIT_APP 	= 0;
+    public final static int BACK_BUTTON_BEHAV_CLOSE_TAB = 1;
+    public final static int BACK_BUTTON_BEHAV_EXIT_TAB	= 2;
+    public final static int BACK_BUTTON_BEHAV_UNDO		= 3;
+    public final static int BACK_BUTTON_BEHAV_DO_NOTHING= 4;
+    
+    private int back_button_behavior = BACK_BUTTON_BEHAV_EXIT_APP;	//
 
     public static boolean isLoading = false; // 是否正在加载文件
     private static boolean fullScreen = false; // 是否已经全屏状态
@@ -121,6 +132,8 @@ public class JecEditor extends Activity
     private SymbolGrid mSymbolGrid;
     private SharedPreferences mPref;
     private TabHost mTabHost;
+    
+    private int last_file_pos = 0;
 
     // 打开文件浏览器后的回调操作
     private Runnable fileBrowserCallbackRunnable = new Runnable() {
@@ -569,8 +582,8 @@ public class JecEditor extends Activity
         // 搜索设置
         mAsyncSearch.setIgnoreCase(mPref.getBoolean("search_ignore_case", true));
         mAsyncSearch.setRegExp(mPref.getBoolean("search_regex", false));
-        back_button_exit = mPref.getBoolean("back_button_exit", true);
-        
+        //back_button_exit = mPref.getBoolean("back_button_exit", true);
+        back_button_behavior = Integer.parseInt(mPref.getString("back_button", "0"));
         init_highlight();
     }
     
@@ -652,7 +665,8 @@ public class JecEditor extends Activity
                 {
                     findLayout.setVisibility(View.GONE);
                     replaceLayout.setVisibility(View.GONE);
-                }else if(back_button_exit)
+                }//else if(back_button_exit)
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_EXIT_APP)
                 {
                     confirm_save(new Runnable() {
 
@@ -662,6 +676,36 @@ public class JecEditor extends Activity
                             JecEditor.this.finish();
                         }
                     });
+                }
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_CLOSE_TAB)
+                {
+                	confirm_save(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            mTabHost.closeTab(mTabHost.getCurrentTab());
+                        }
+                    });
+                }
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_UNDO)
+                {
+                	if (mEditText.canUndo())
+                		mEditText.unDo();
+                }
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_EXIT_TAB)
+                {
+					confirm_save(new Runnable()
+					{	
+						@Override
+						public void run()
+						{
+							if (!mEditText.isTextChanged() && mTabHost.getTabCount() == 1 &&
+									"".equals(mEditText.getPath()))
+								JecEditor.this.finish();
+							else
+								mTabHost.closeTab(mTabHost.getCurrentTab());
+						}
+					});
                 }
                 return true;
             case KeyEvent.KEYCODE_VOLUME_UP:
@@ -722,7 +766,7 @@ public class JecEditor extends Activity
         ImageButton findNext = (ImageButton) findViewById(R.id.find_next_imageButton);
         ImageButton findBack = (ImageButton) findViewById(R.id.find_back_imageButton);
         findNext.setOnClickListener(findButtonClickListener);
-        findBack.setOnClickListener(findButtonClickListener);
+        findBack.setOnClickListener(findButtonClickListener);     
         // replace
         Button replaceButton = (Button) findViewById(R.id.replace_button);
         Button replaceAllButton = (Button) findViewById(R.id.replace_all_button);
@@ -992,6 +1036,7 @@ public class JecEditor extends Activity
         intent.putExtra("filename", filename);
         intent.putExtra("mode", mode);
         intent.putExtra("isRoot", isRoot);
+        intent.putExtra("file_pos", last_file_pos);
         intent.setClass(JecEditor.this, FileBrowser.class);
         startActivityForResult(intent, mode);
     }
@@ -1020,6 +1065,8 @@ public class JecEditor extends Activity
                 path = data.getStringExtra("file");
                 int lineBreak = data.getIntExtra("linebreak", 0);
                 int encoding = data.getIntExtra("encoding", 0);
+                last_file_pos = data.getIntExtra("file_pos", 0);
+
                 String charset;
                 if(encoding < 1)
                 {
