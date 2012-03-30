@@ -41,7 +41,6 @@ import com.jecelyin.widget.TabHost;
 import com.jecelyin.widget.TabHost.OnTabChangeListener;
 import com.jecelyin.widget.TabHost.OnTabCloseListener;
 
-import android.R.integer;
 import android.app.Activity;
 import android.app.AlertDialog;
 /*import android.app.Notification;
@@ -59,7 +58,6 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.text.Editable;
 import android.text.InputType;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -459,7 +457,55 @@ public class JecEditor extends Activity
             }
         }
     }
+    
+    @Override
+    protected void onNewIntent(Intent intent)
+	{	
+		if (intent == null)
+			return ;
+		
+		if (Intent.ACTION_VIEW.equals(intent.getAction()) ||
+			Intent.ACTION_EDIT.equals(intent.getAction())
+			)
+		{
+			Uri mUri = intent.getData();
+			String open_path = mUri != null ? mUri.getPath() : "";
+			if (!"".equals(open_path) && open_path != null)
+			{
+				readFileToEditText(open_path);
+			}
+		}
+		else if (Intent.ACTION_SEND.equals(intent.getAction()) &&
+				intent.getExtras() != null)
+		{
+			Bundle extras = intent.getExtras();
+			CharSequence text = extras.getCharSequence(Intent.EXTRA_TEXT);
+			if (text != null)
+			{
+				mEditText.setText2(text.toString());
+			}
 
+		}
+		else if (ACTION_EDIT_SCRIPT.equals(intent.getAction()) &&
+				intent.getExtras() != null)
+		{
+			Bundle extras = intent.getExtras();
+			String path = extras.getString(EXTRA_SCRIPT_PATH);
+			CharSequence contents = extras
+					.getCharSequence(EXTRA_SCRIPT_CONTENT);
+			if (contents != null)
+			{
+				mEditText.setText2(contents);
+			}
+			else
+			{
+				if (path != null)
+				{
+					readFileToEditText(path);
+				}
+			}
+		}
+	}
 
     protected void onEditLocationChanged(JecEditText editText)
     {

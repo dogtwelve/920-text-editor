@@ -1,3 +1,6 @@
+Version 12.3.30
+	*) Bug Fix: fixed when app is running, open file with app from outside will failed
+	
 Version 12.3.28
 	*) Feature: new back button behavior
 	*) Feature: remember last open file scroll position
