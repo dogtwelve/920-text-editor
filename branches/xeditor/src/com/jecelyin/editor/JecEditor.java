@@ -132,6 +132,9 @@ public class JecEditor extends Activity
     private TabHost mTabHost;
     
     private int last_file_pos = 0;
+    
+    // for confirm_save_all
+    private boolean isConfirmFileExists = false;
 
     // 打开文件浏览器后的回调操作
     private Runnable fileBrowserCallbackRunnable = new Runnable() {
@@ -734,14 +737,16 @@ public class JecEditor extends Activity
                 }//else if(back_button_exit)
                 else if(back_button_behavior == BACK_BUTTON_BEHAV_EXIT_APP)
                 {
-                	confirm_save(new Runnable() {
+                	/*confirm_save(new Runnable() {
 
                         @Override
                         public void run()
                         {
                             JecEditor.this.finish();
                         }
-                    });
+                    });*/
+                	mTabHost.setCurrentTab(0);
+                	confirm_save_all();
                 }
                 else if(back_button_behavior == BACK_BUTTON_BEHAV_CLOSE_TAB)
                 {
@@ -1037,6 +1042,30 @@ public class JecEditor extends Activity
 
     }
     
+    // must set currentTab to 0 first
+    // do not close tab due to if user CHECKED 'Remember last file'
+    public void confirm_save_all()
+    {
+    	confirm_save(new Runnable()
+		{			
+			@Override
+			public void run()
+			{
+				int nextTab = mTabHost.getCurrentTab() + 1;
+				if (nextTab == mTabHost.getTabCount())
+				{
+					JecEditor.this.finish();
+				}
+				else
+				{
+				  	mTabHost.setCurrentTab(nextTab);
+					confirm_save_all();
+				}
+			}
+		}
+    	);
+    }
+    
     private void save()
     {
         if("".equals(mEditText.getPath()) || isLoading)
@@ -1149,16 +1178,28 @@ public class JecEditor extends Activity
                 final File file = new File(path);
                 if(file.exists())
                 {
-                    new AlertDialog.Builder(this).setMessage(getText(R.string.overwrite_confirm)).setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                	isConfirmFileExists = true;
+                    new AlertDialog.Builder(this).setMessage(getText(R.string.overwrite_confirm))
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which)
                         {
                             mEditText.setPath(path);
                             setTitle(file.getName());
                             save();
-                            
+                            isConfirmFileExists = false;
+                            fileBrowserCallbackRunnable.run();
                         }
-                    }).setNegativeButton(android.R.string.no, null).show();
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener()
+					{
+						@Override
+						public void onClick(DialogInterface dialog, int which)
+						{
+                            isConfirmFileExists = false;
+                            fileBrowserCallbackRunnable.run();
+						}
+					}).show();
                 }else
                 {
                     mEditText.setPath(path);
@@ -1167,7 +1208,9 @@ public class JecEditor extends Activity
                 }
                 break;
         }
-        fileBrowserCallbackRunnable.run();
+        // 等待确认覆盖与否
+        if (!isConfirmFileExists)
+        	fileBrowserCallbackRunnable.run();
     }
 
     public void onLoaded()
@@ -1549,14 +1592,16 @@ public class JecEditor extends Activity
                     startActivity(intent);
                     break;
                 case R.id.menu_exit:
-                    confirm_save(new Runnable() {
+                    /*confirm_save(new Runnable() {
 
                         @Override
                         public void run()
                         {
                             JecEditor.this.finish();
                         }
-                    });
+                    });*/
+                	mTabHost.setCurrentTab(0);
+                	confirm_save_all();
       
                     break;
             }
