@@ -251,6 +251,26 @@ public class JecEditor extends Activity
                 {
                     redoBtn.setImageDrawable(redo_no_drawable);
                 }
+                
+                if (editText.isTextChanged())
+                {
+                	String oriTitle =  mTabHost.getTitle();
+                	
+                	if (oriTitle.charAt(oriTitle.length() - 1) != '*')
+                	{
+	                	oriTitle += '*';
+	                	mTabHost.setTitle(oriTitle);
+                	}
+                }
+                else
+                {
+                	String oriTitle =  mTabHost.getTitle();
+                	if (oriTitle.charAt(oriTitle.length() - 1) == '*')
+                	{
+	                	oriTitle = oriTitle.replaceAll("\\*", "");
+	                	mTabHost.setTitle(oriTitle);
+                	}
+				}
             }
         });
 
@@ -714,7 +734,7 @@ public class JecEditor extends Activity
                 }//else if(back_button_exit)
                 else if(back_button_behavior == BACK_BUTTON_BEHAV_EXIT_APP)
                 {
-                    confirm_save(new Runnable() {
+                	confirm_save(new Runnable() {
 
                         @Override
                         public void run()
@@ -1016,7 +1036,7 @@ public class JecEditor extends Activity
                 }).show();
 
     }
-
+    
     private void save()
     {
         if("".equals(mEditText.getPath()) || isLoading)
@@ -1025,9 +1045,10 @@ public class JecEditor extends Activity
         boolean ok = FileUtil.writeFile(mEditText.getPath(), content, mEditText.getEncoding(), isRoot);
         if(ok)
         {
-            mEditText.setTextFinger();
+        	mEditText.setTextFinger();
             Toast.makeText(JecEditor.this, R.string.save_succ, Toast.LENGTH_LONG).show();
-        }else
+        }
+        else
         {
             Toast.makeText(JecEditor.this, R.string.save_failed, Toast.LENGTH_LONG).show();
         }
@@ -1135,6 +1156,7 @@ public class JecEditor extends Activity
                             mEditText.setPath(path);
                             setTitle(file.getName());
                             save();
+                            
                         }
                     }).setNegativeButton(android.R.string.no, null).show();
                 }else
@@ -1143,7 +1165,6 @@ public class JecEditor extends Activity
                     setTitle(file.getName());
                     save();
                 }
-
                 break;
         }
         fileBrowserCallbackRunnable.run();
@@ -1536,6 +1557,7 @@ public class JecEditor extends Activity
                             JecEditor.this.finish();
                         }
                     });
+      
                     break;
             }
             return true;

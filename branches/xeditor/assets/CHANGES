@@ -1,3 +1,6 @@
+Version 12.4.2
+	*) Feature: Add '*' to mark the modified tab
+
 Version 12.3.30
 	*) Bug Fix: fixed when app is running, open file with app from outside will failed
 	
