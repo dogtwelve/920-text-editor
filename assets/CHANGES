@@ -1,3 +1,18 @@
+Version 12.4.10
+	*) Bug Fix: When saved file, will not remove the '*' indicator
+	*) Feature: New Copy/Cut line function
+
+Version 12.4.2
+	*) Feature: Add '*' to mark the modified tab
+	*) Bug Fix:	Fixed not prompt user the unsaved tab(s)
+
+Version 12.3.30
+	*) Bug Fix: fixed when app is running, open file with app from outside will failed
+	
+Version 12.3.28
+	*) Feature: new back button behavior
+	*) Feature: remember last open file scroll position
+
 Version 12.3.27
     *) Bug Fix: fixed click on the text area under the 4.0 system crash bug
 

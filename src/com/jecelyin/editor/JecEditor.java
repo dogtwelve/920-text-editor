@@ -98,9 +98,18 @@ public class JecEditor extends Activity
     
     public int MAX_HIGHLIGHT_FILESIZE = 400;
     //private int org_textcontent_md5 = 0;
-    private boolean back_button_exit = true; // 按返回键退出程序
+    //private boolean back_button_exit = true; // 按返回键退出程序
     private boolean autosave = false; // 是否自动保存
     // end
+    
+    // back button behavior
+    public final static int BACK_BUTTON_BEHAV_EXIT_APP 	= 0;
+    public final static int BACK_BUTTON_BEHAV_CLOSE_TAB = 1;
+    public final static int BACK_BUTTON_BEHAV_EXIT_TAB	= 2;
+    public final static int BACK_BUTTON_BEHAV_UNDO		= 3;
+    public final static int BACK_BUTTON_BEHAV_DO_NOTHING= 4;
+    
+    private int back_button_behavior = BACK_BUTTON_BEHAV_EXIT_APP;	//
 
     public static boolean isLoading = false; // 是否正在加载文件
     private static boolean fullScreen = false; // 是否已经全屏状态
@@ -121,6 +130,11 @@ public class JecEditor extends Activity
     private SymbolGrid mSymbolGrid;
     private SharedPreferences mPref;
     private TabHost mTabHost;
+    
+    private int last_file_pos = 0;
+    
+    // for confirm_save_all
+    private boolean isConfirmFileExists = false;
 
     // 打开文件浏览器后的回调操作
     private Runnable fileBrowserCallbackRunnable = new Runnable() {
@@ -240,6 +254,26 @@ public class JecEditor extends Activity
                 {
                     redoBtn.setImageDrawable(redo_no_drawable);
                 }
+                
+                if (editText.isTextChanged())
+                {
+                	String oriTitle =  mTabHost.getTitle();
+                	
+                	if (oriTitle.charAt(oriTitle.length() - 1) != '*')
+                	{
+	                	oriTitle += '*';
+	                	mTabHost.setTitle(oriTitle);
+                	}
+                }
+                else
+                {
+                	String oriTitle =  mTabHost.getTitle();
+                	if (oriTitle.charAt(oriTitle.length() - 1) == '*')
+                	{
+	                	oriTitle = oriTitle.replaceAll("\\*", "");
+	                	mTabHost.setTitle(oriTitle);
+                	}
+				}
             }
         });
 
@@ -250,6 +284,7 @@ public class JecEditor extends Activity
             public void onTabChanged(int tabId)
             {
                 mEditText = mTabHost.getCurrentEditText();
+                mEditText.requestFocus();
                 String name = Highlight.getNameByExt(mEditText.getCurrentFileExt());
                 switchPreviewButton(name);
             }
@@ -446,7 +481,55 @@ public class JecEditor extends Activity
             }
         }
     }
+    
+    @Override
+    protected void onNewIntent(Intent intent)
+	{	
+		if (intent == null)
+			return ;
+		
+		if (Intent.ACTION_VIEW.equals(intent.getAction()) ||
+			Intent.ACTION_EDIT.equals(intent.getAction())
+			)
+		{
+			Uri mUri = intent.getData();
+			String open_path = mUri != null ? mUri.getPath() : "";
+			if (!"".equals(open_path) && open_path != null)
+			{
+				readFileToEditText(open_path);
+			}
+		}
+		else if (Intent.ACTION_SEND.equals(intent.getAction()) &&
+				intent.getExtras() != null)
+		{
+			Bundle extras = intent.getExtras();
+			CharSequence text = extras.getCharSequence(Intent.EXTRA_TEXT);
+			if (text != null)
+			{
+				mEditText.setText2(text.toString());
+			}
 
+		}
+		else if (ACTION_EDIT_SCRIPT.equals(intent.getAction()) &&
+				intent.getExtras() != null)
+		{
+			Bundle extras = intent.getExtras();
+			String path = extras.getString(EXTRA_SCRIPT_PATH);
+			CharSequence contents = extras
+					.getCharSequence(EXTRA_SCRIPT_CONTENT);
+			if (contents != null)
+			{
+				mEditText.setText2(contents);
+			}
+			else
+			{
+				if (path != null)
+				{
+					readFileToEditText(path);
+				}
+			}
+		}
+	}
 
     protected void onEditLocationChanged(JecEditText editText)
     {
@@ -569,8 +652,8 @@ public class JecEditor extends Activity
         // 搜索设置
         mAsyncSearch.setIgnoreCase(mPref.getBoolean("search_ignore_case", true));
         mAsyncSearch.setRegExp(mPref.getBoolean("search_regex", false));
-        back_button_exit = mPref.getBoolean("back_button_exit", true);
-        
+        //back_button_exit = mPref.getBoolean("back_button_exit", true);
+        back_button_behavior = Integer.parseInt(mPref.getString("back_button", "0"));
         init_highlight();
     }
     
@@ -652,16 +735,49 @@ public class JecEditor extends Activity
                 {
                     findLayout.setVisibility(View.GONE);
                     replaceLayout.setVisibility(View.GONE);
-                }else if(back_button_exit)
+                }//else if(back_button_exit)
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_EXIT_APP)
                 {
-                    confirm_save(new Runnable() {
+                	/*confirm_save(new Runnable() {
 
                         @Override
                         public void run()
                         {
                             JecEditor.this.finish();
                         }
+                    });*/
+                	mTabHost.setCurrentTab(0);
+                	confirm_save_all();
+                }
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_CLOSE_TAB)
+                {
+                	confirm_save(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            mTabHost.closeTab(mTabHost.getCurrentTab());
+                        }
                     });
+                }
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_UNDO)
+                {
+                	if (mEditText.canUndo())
+                		mEditText.unDo();
+                }
+                else if(back_button_behavior == BACK_BUTTON_BEHAV_EXIT_TAB)
+                {
+					confirm_save(new Runnable()
+					{	
+						@Override
+						public void run()
+						{
+							if (!mEditText.isTextChanged() && mTabHost.getTabCount() == 1 &&
+									"".equals(mEditText.getPath()))
+								JecEditor.this.finish();
+							else
+								mTabHost.closeTab(mTabHost.getCurrentTab());
+						}
+					});
                 }
                 return true;
             case KeyEvent.KEYCODE_VOLUME_UP:
@@ -722,7 +838,7 @@ public class JecEditor extends Activity
         ImageButton findNext = (ImageButton) findViewById(R.id.find_next_imageButton);
         ImageButton findBack = (ImageButton) findViewById(R.id.find_back_imageButton);
         findNext.setOnClickListener(findButtonClickListener);
-        findBack.setOnClickListener(findButtonClickListener);
+        findBack.setOnClickListener(findButtonClickListener);     
         // replace
         Button replaceButton = (Button) findViewById(R.id.replace_button);
         Button replaceAllButton = (Button) findViewById(R.id.replace_all_button);
@@ -926,7 +1042,31 @@ public class JecEditor extends Activity
                 }).show();
 
     }
-
+    
+    // must set currentTab to 0 first
+    // do not close tab due to if user CHECKED 'Remember last file'
+    public void confirm_save_all()
+    {
+    	confirm_save(new Runnable()
+		{			
+			@Override
+			public void run()
+			{
+				int nextTab = mTabHost.getCurrentTab() + 1;
+				if (nextTab == mTabHost.getTabCount())
+				{
+					JecEditor.this.finish();
+				}
+				else
+				{
+				  	mTabHost.setCurrentTab(nextTab);
+					confirm_save_all();
+				}
+			}
+		}
+    	);
+    }
+    
     private void save()
     {
         if("".equals(mEditText.getPath()) || isLoading)
@@ -935,9 +1075,17 @@ public class JecEditor extends Activity
         boolean ok = FileUtil.writeFile(mEditText.getPath(), content, mEditText.getEncoding(), isRoot);
         if(ok)
         {
-            mEditText.setTextFinger();
+        	mEditText.setTextFinger();
             Toast.makeText(JecEditor.this, R.string.save_succ, Toast.LENGTH_LONG).show();
-        }else
+            
+        	String oriTitle =  mTabHost.getTitle();
+        	if (oriTitle.charAt(oriTitle.length() - 1) == '*')
+        	{
+            	oriTitle = oriTitle.replaceAll("\\*", "");
+            	mTabHost.setTitle(oriTitle);
+        	}
+        }
+        else
         {
             Toast.makeText(JecEditor.this, R.string.save_failed, Toast.LENGTH_LONG).show();
         }
@@ -992,6 +1140,7 @@ public class JecEditor extends Activity
         intent.putExtra("filename", filename);
         intent.putExtra("mode", mode);
         intent.putExtra("isRoot", isRoot);
+        intent.putExtra("file_pos", last_file_pos);
         intent.setClass(JecEditor.this, FileBrowser.class);
         startActivityForResult(intent, mode);
     }
@@ -1020,6 +1169,8 @@ public class JecEditor extends Activity
                 path = data.getStringExtra("file");
                 int lineBreak = data.getIntExtra("linebreak", 0);
                 int encoding = data.getIntExtra("encoding", 0);
+                last_file_pos = data.getIntExtra("file_pos", 0);
+
                 String charset;
                 if(encoding < 1)
                 {
@@ -1035,25 +1186,39 @@ public class JecEditor extends Activity
                 final File file = new File(path);
                 if(file.exists())
                 {
-                    new AlertDialog.Builder(this).setMessage(getText(R.string.overwrite_confirm)).setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                	isConfirmFileExists = true;
+                    new AlertDialog.Builder(this).setMessage(getText(R.string.overwrite_confirm))
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which)
                         {
                             mEditText.setPath(path);
                             setTitle(file.getName());
                             save();
+                            isConfirmFileExists = false;
+                            fileBrowserCallbackRunnable.run();
                         }
-                    }).setNegativeButton(android.R.string.no, null).show();
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener()
+					{
+						@Override
+						public void onClick(DialogInterface dialog, int which)
+						{
+                            isConfirmFileExists = false;
+                            fileBrowserCallbackRunnable.run();
+						}
+					}).show();
                 }else
                 {
                     mEditText.setPath(path);
                     setTitle(file.getName());
                     save();
                 }
-
                 break;
         }
-        fileBrowserCallbackRunnable.run();
+        // 等待确认覆盖与否
+        if (!isConfirmFileExists)
+        	fileBrowserCallbackRunnable.run();
     }
 
     public void onLoaded()
@@ -1224,6 +1389,15 @@ public class JecEditor extends Activity
         if(v.getId() == mEditText.getId())
         {
             MenuHandler handler = new MenuHandler();
+            
+            if (mEditText.getLineCount() > 0 &&
+            		mEditText.getText().length() > 0 &&
+            		mEditText.hasFocus())
+            {
+            	menu.add(0, R.id.copy_line, 0, R.string.copy_line).setOnMenuItemClickListener(handler);
+            	menu.add(0, R.id.cut_line, 0, R.string.cut_line).setOnMenuItemClickListener(handler);
+            }
+            
             // 跳转到指定行
             menu.add(0, R.id.go_to_begin, 0, R.string.go_to_begin).setOnMenuItemClickListener(handler);
             // 跳转到指定行
@@ -1321,6 +1495,14 @@ public class JecEditor extends Activity
                 case R.id.insert_datetime:
                     insert_text(TimeUtil.getDate());
                     break;
+                    
+                case R.id.copy_line:
+                	mEditText.copyLine();
+                	break;
+                	
+                case R.id.cut_line:
+                	mEditText.cutLine();
+                	break;
             }
 
             return true; // true表示完成当前item的click处理，不再传递到父类处理
@@ -1435,14 +1617,17 @@ public class JecEditor extends Activity
                     startActivity(intent);
                     break;
                 case R.id.menu_exit:
-                    confirm_save(new Runnable() {
+                    /*confirm_save(new Runnable() {
 
                         @Override
                         public void run()
                         {
                             JecEditor.this.finish();
                         }
-                    });
+                    });*/
+                	mTabHost.setCurrentTab(0);
+                	confirm_save_all();
+      
                     break;
             }
             return true;

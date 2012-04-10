@@ -28,6 +28,7 @@ import com.jecelyin.highlight.Highlight;
 import com.jecelyin.util.FileUtil;
 import com.jecelyin.util.TextUtil;
 
+import android.R.anim;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
@@ -38,6 +39,7 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.ClipboardManager;
 import android.text.Editable;
 import android.text.Layout;
 import android.text.Selection;
@@ -1377,6 +1379,80 @@ public class JecEditText extends EditText
     public int getLineBreak()
     {
         return current_linebreak;
+    }
+    
+    private void copyLine(boolean cutMode)
+    {
+    	int start = getSelectionStart();
+    	
+    	String text = getText().toString();
+    	
+    	if (start < 0)
+    		start = 0;
+    	if (start >= text.length())
+    		start = text.length() - 1;
+    	
+    	if (text.charAt(start) == '\n')
+    		start--;
+
+    	if (start > 0 && text.charAt(start) == '\r')
+    		start--;
+    	
+    	if (start < 0)
+    		start = 0;
+    	
+    	int lineBegin = start;
+    	for( ; lineBegin > 0; --lineBegin)
+    	{
+    		if (text.charAt(lineBegin) == '\r' ||
+    			text.charAt(lineBegin) == '\n'
+    			)
+    		{
+    			lineBegin++;
+    			break;
+    		}
+    	}
+    	
+    	int lineEnd = start;
+    	
+    	for( ; lineEnd < text.length(); ++lineEnd)
+    	{
+    		if (text.charAt(lineEnd) == '\r' ||
+        		text.charAt(lineEnd) == '\n'
+    			)
+    		{
+    			lineEnd++;
+    			break;
+    		}
+    	}
+    	
+/*    	Toast.makeText(getContext(),
+    			String.valueOf(lineBegin) + " | " + String.valueOf(lineEnd),
+    			Toast.LENGTH_LONG).show();
+*/    	
+    	if (lineBegin == lineEnd)
+    		if (lineEnd < text.length() - 1)
+    			lineEnd ++;
+    	
+    	String cur_line_text = text.substring(lineBegin, lineEnd);
+
+    	ClipboardManager cm = (ClipboardManager)getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+    	cm.setText(cur_line_text);
+    	
+    	if (cutMode)
+    	{
+    		getText().delete(lineBegin, lineEnd);
+    	}
+    }
+    
+    public void copyLine()
+    {
+    	copyLine(false);
+    }
+    
+    public void cutLine()
+    {
+    	copyLine(true);
     }
 
 }

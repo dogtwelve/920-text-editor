@@ -94,6 +94,16 @@ public class TabHost extends LinearLayout
         // initTabHost();
         
     }
+    
+    public int getCurrentTab()
+    {
+    	return mCurrentTab;
+    }
+    
+    public int getTabCount()
+    {
+    	return mTabWidget.getTabCount();
+    }
 
     public void initTabHost(JecEditor parent)
     {
@@ -128,6 +138,18 @@ public class TabHost extends LinearLayout
             return;
         TextView mTitleView = (TextView)mView.findViewById(R.id.title);
         mTitleView.setText(title);
+    }
+    
+    public String getTitle()
+    {
+    	if(mCurrentTab < 0)
+            return "";
+        View mView = mTabWidget.getChildTabViewAt(mCurrentTab);
+        if(mView == null)
+            return "";
+        TextView mTitleView = (TextView)mView.findViewById(R.id.title);
+        
+        return mTitleView.getText().toString();
     }
 
     /**
