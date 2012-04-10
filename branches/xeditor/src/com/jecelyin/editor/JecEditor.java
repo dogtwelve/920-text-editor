@@ -284,6 +284,7 @@ public class JecEditor extends Activity
             public void onTabChanged(int tabId)
             {
                 mEditText = mTabHost.getCurrentEditText();
+                mEditText.requestFocus();
                 String name = Highlight.getNameByExt(mEditText.getCurrentFileExt());
                 switchPreviewButton(name);
             }
@@ -1389,7 +1390,9 @@ public class JecEditor extends Activity
         {
             MenuHandler handler = new MenuHandler();
             
-            if (mEditText.getLineCount() > 0 && mEditText.getText().length() > 0)
+            if (mEditText.getLineCount() > 0 &&
+            		mEditText.getText().length() > 0 &&
+            		mEditText.hasFocus())
             {
             	menu.add(0, R.id.copy_line, 0, R.string.copy_line).setOnMenuItemClickListener(handler);
             	menu.add(0, R.id.cut_line, 0, R.string.cut_line).setOnMenuItemClickListener(handler);

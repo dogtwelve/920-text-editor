@@ -1,5 +1,6 @@
 Version 12.4.10
 	*) Bug Fix: When saved file, will not remove the '*' indicator
+	*) Feature: New Copy/Cut line function
 
 Version 12.4.2
 	*) Feature: Add '*' to mark the modified tab
