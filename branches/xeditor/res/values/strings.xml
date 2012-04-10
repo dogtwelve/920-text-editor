@@ -158,4 +158,7 @@ You should have received a copy of the GNU General Public License along with thi
     <string name="default_color_scheme">System default</string>
     <string name="color_scheme">Color Scheme</string>
     <string name="touch_zoom">Touch zoom the text size</string>
+    
+    <string name="copy_line">Copy Line</string>
+    <string name="cut_line">Cut Line</string>
 </resources>

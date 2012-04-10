@@ -180,7 +180,7 @@ public class FileBrowser extends ListActivity
         } catch (Exception e) {
             return false;
         }
-        lastPos = position;
+
         int itemId = item.getItemId();
         switch(itemId)
         {
@@ -353,7 +353,8 @@ public class FileBrowser extends ListActivity
             mIntent.putExtra("file", file.getPath());
             mIntent.putExtra("linebreak", linebreakSpinner.getSelectedItemPosition());
             mIntent.putExtra("encoding", encoding_list.getSelectedItemPosition());
-            lastPos = position;
+            //lastPos = position;
+            lastPos = listView.getFirstVisiblePosition();
             mIntent.putExtra("file_pos", lastPos);
             setResult(RESULT_OK, mIntent);
             finish();

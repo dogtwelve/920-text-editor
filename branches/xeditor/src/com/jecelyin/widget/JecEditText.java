@@ -1378,5 +1378,15 @@ public class JecEditText extends EditText
     {
         return current_linebreak;
     }
+    
+    public void copyLine()
+    {
+    	Toast.makeText(this.getContext(), "Not yet implemented", Toast.LENGTH_LONG);
+    }
+    
+    public void cutLine()
+    {
+    	Toast.makeText(this.getContext(), "Not yet implemented", Toast.LENGTH_LONG);
+    }
 
 }

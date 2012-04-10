@@ -1076,6 +1076,13 @@ public class JecEditor extends Activity
         {
         	mEditText.setTextFinger();
             Toast.makeText(JecEditor.this, R.string.save_succ, Toast.LENGTH_LONG).show();
+            
+        	String oriTitle =  mTabHost.getTitle();
+        	if (oriTitle.charAt(oriTitle.length() - 1) == '*')
+        	{
+            	oriTitle = oriTitle.replaceAll("\\*", "");
+            	mTabHost.setTitle(oriTitle);
+        	}
         }
         else
         {
@@ -1381,6 +1388,13 @@ public class JecEditor extends Activity
         if(v.getId() == mEditText.getId())
         {
             MenuHandler handler = new MenuHandler();
+            
+            if (mEditText.getLineCount() > 0 && mEditText.getText().length() > 0)
+            {
+            	menu.add(0, R.id.copy_line, 0, R.string.copy_line).setOnMenuItemClickListener(handler);
+            	menu.add(0, R.id.cut_line, 0, R.string.cut_line).setOnMenuItemClickListener(handler);
+            }
+            
             // 跳转到指定行
             menu.add(0, R.id.go_to_begin, 0, R.string.go_to_begin).setOnMenuItemClickListener(handler);
             // 跳转到指定行
@@ -1478,6 +1492,14 @@ public class JecEditor extends Activity
                 case R.id.insert_datetime:
                     insert_text(TimeUtil.getDate());
                     break;
+                    
+                case R.id.copy_line:
+                	mEditText.copyLine();
+                	break;
+                	
+                case R.id.cut_line:
+                	mEditText.cutLine();
+                	break;
             }
 
             return true; // true表示完成当前item的click处理，不再传递到父类处理

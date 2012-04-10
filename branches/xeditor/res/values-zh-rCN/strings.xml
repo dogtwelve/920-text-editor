@@ -153,4 +153,6 @@
     <string name="default_color_scheme">系统默认</string>
     <string name="color_scheme">色彩方案</string>
     <string name="touch_zoom">触摸放大缩小文字大小</string>
+    <string name="copy_line">复制行</string>
+    <string name="cut_line">剪切行</string>
 </resources>
