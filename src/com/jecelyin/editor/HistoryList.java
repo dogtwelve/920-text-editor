@@ -61,7 +61,7 @@ public class HistoryList
                 Toast.makeText(mJecEditor.getApplicationContext(), mJecEditor.getString(R.string.file_not_exists), Toast.LENGTH_LONG);
                 return;
             }
-            mJecEditor.confirm_save(new Runnable() {
+            mJecEditor.saveConfirm(new Runnable() {
                 
                 @Override
                 public void run()

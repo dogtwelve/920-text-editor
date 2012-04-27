@@ -159,5 +159,9 @@ public class UndoParcel implements Parcelable
     {
         return mBuffer.size()>0;
     }
-
+    
+    public ArrayList<TextChange> getBuffer()
+    {
+        return mBuffer;
+    }
 }

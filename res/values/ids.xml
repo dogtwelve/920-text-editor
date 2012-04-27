@@ -17,4 +17,6 @@
     <item type="id" name="menu_preferences"/>
     <item type="id" name="menu_exit"/>
     <item name="insert_datetime" type="id"></item>
+    <item type="id" name="duplicate_line"/>
+    <item type="id" name="doc_stat"/>
 </resources>

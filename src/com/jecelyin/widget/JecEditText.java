@@ -18,6 +18,9 @@ package com.jecelyin.widget;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.CRC32;
 
 import com.jecelyin.colorschemes.ColorScheme;
 import com.jecelyin.editor.JecEditor;
@@ -27,9 +30,13 @@ import com.jecelyin.editor.UndoParcel.TextChange;
 import com.jecelyin.highlight.Highlight;
 import com.jecelyin.util.FileUtil;
 import com.jecelyin.util.TextUtil;
+import com.jecelyin.util.TimeUtil;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -38,24 +45,32 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.ClipboardManager;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextWatcher;
+import android.text.method.MetaKeyKeyListener;
+import android.text.method.PasswordTransformationMethod;
 import android.text.method.Touch;
 import android.text.style.ParagraphStyle;
 import android.text.style.TabStopSpan;
+import android.text.style.URLSpan;
 import android.util.AttributeSet;
 import android.util.FloatMath;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Scroller;
 import android.widget.Toast;
@@ -102,8 +117,11 @@ public class JecEditText extends EditText
     private String current_encoding = "UTF-8"; // 当前文件的编码,用于正确回写文件
     private String current_path = ""; // 当前打开的文件路径
     private String current_ext = ""; // 当前扩展名
+    private String current_title = ""; // 当前tab标题
     private int current_linebreak = 0; // 换行字符
     private int src_text_length; // 原始文本内容长度
+    private long src_text_crc32; // crc校验
+    private CRC32 mCRC32;
     private boolean mNoWrapMode = false;
     private int mLineNumX = 0; // 行数位置
 
@@ -127,6 +145,8 @@ public class JecEditText extends EditText
     private float mTextSize;
     // whether support multi-touch
     private boolean mSupportMultiTouch;
+    //是否显示输入法
+    private static boolean mHideSoftKeyboard;
 
     // we need this constructor for LayoutInflater
     public JecEditText(Context context, AttributeSet attrs)
@@ -192,6 +212,7 @@ public class JecEditText extends EditText
 
     public void init()
     {
+        mCRC32 = new CRC32();
         mHighlight = new Highlight();
         mWorkPaint = new TextPaint();
         mTextPaint = getPaint(); // new TextPaint(Paint.ANTI_ALIAS_FLAG);
@@ -1318,6 +1339,11 @@ public class JecEditText extends EditText
         }
         setCurrentFileExt(FileUtil.getExt(path));
     }
+    
+    public void setTitle(String title)
+    {
+        current_title = title;
+    }
 
     public void setCurrentFileExt(String ext)
     {
@@ -1341,16 +1367,33 @@ public class JecEditText extends EditText
     {
         return current_path;
     }
+    
+    public String getTitle()
+    {
+        return current_title;
+    }
 
     public void setTextFinger()
     {
         src_text_length = getText().length();
+        byte bytes[] = getString().getBytes();
+        mCRC32.update(bytes,0,bytes.length);
+        src_text_crc32 = mCRC32.getValue();
     }
 
     public boolean isTextChanged()
     {
-        // 简单判断一下内容是否改变
-        return src_text_length != getText().length();
+        CharSequence text = getText();
+        int hash = text.length();
+        //长度不相等，肯定是有更改了
+        if(src_text_length != hash)
+        {
+            return true;
+        }
+        //进行CRC检验
+        byte bytes[] = getString().getBytes();
+        mCRC32.update(bytes,0,bytes.length);
+        return src_text_crc32 == mCRC32.getValue();
     }
 
     public void setHorizontallyScrolling(boolean whether)
@@ -1377,6 +1420,497 @@ public class JecEditText extends EditText
     public int getLineBreak()
     {
         return current_linebreak;
+    }
+
+    
+    
+    public void showIME(boolean show)
+    {
+        JecEditText.setHideKeyboard(!show);
+        InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        if(getResources().getConfiguration().hardKeyboardHidden != Configuration.HARDKEYBOARDHIDDEN_YES)
+        {
+            show = false;
+        }
+        if(show)
+        { // 显示键盘，即输入法
+            int type = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+            setInputType(type);
+            if(imm != null)
+            {
+                imm.showSoftInput(this, 0);
+            }
+        }else
+        { // 隐藏键盘
+            setRawInputType(0);
+            if(imm != null)
+            {
+                imm.hideSoftInputFromWindow(getWindowToken(), 0);
+            }
+        }
+    }
+    
+    @Override
+    public boolean onKeyShortcut(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+        case KeyEvent.KEYCODE_A:
+            if (canSelectAll()) {
+                return onTextContextMenuItem(ID_SELECT_ALL);
+            }
+
+            break;
+
+        case KeyEvent.KEYCODE_X:
+            if (canCut()) {
+                return onTextContextMenuItem(ID_CUT);
+            }
+
+            break;
+
+        case KeyEvent.KEYCODE_C:
+            if (canCopy()) {
+                return onTextContextMenuItem(ID_COPY);
+            }
+
+            break;
+
+        case KeyEvent.KEYCODE_V:
+            if (canPaste()) {
+                return onTextContextMenuItem(ID_PASTE);
+            }
+
+            break;
+        }
+
+        return super.onKeyShortcut(keyCode, event);
+    }
+    
+    private boolean canSelectAll() {
+        if (mText instanceof Spannable && mText.length() != 0 &&
+                getMovementMethod() != null && getMovementMethod().canSelectArbitrarily()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean canSelectText() {
+        if (mText instanceof Spannable && mText.length() != 0 &&
+                getMovementMethod() != null && getMovementMethod().canSelectArbitrarily()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean canCut() {
+        if (getTransformationMethod() instanceof PasswordTransformationMethod) {
+            return false;
+        }
+
+        if (mText.length() > 0 && getSelectionStart() >= 0) {
+            if (mText instanceof Editable && getKeyListener() != null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean canCopy() {
+        if (getTransformationMethod() instanceof PasswordTransformationMethod) {
+            return false;
+        }
+
+        if (mText.length() > 0 && getSelectionStart() >= 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean canPaste() {
+        if (mText instanceof Editable && getKeyListener() != null &&
+            getSelectionStart() >= 0 && getSelectionEnd() >= 0) {
+            ClipboardManager clip = (ClipboardManager)getContext()
+                    .getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clip.hasText()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    @Override
+    protected void onCreateContextMenu(ContextMenu menu) {
+        //super.onCreateContextMenu(menu);
+
+        if (!isFocused()) {
+            if (isFocusable() && getKeyListener() != null) {
+                if (canCopy()) {
+                    MenuHandler handler = new MenuHandler();
+                    int name = R.string.copyAll;
+
+                    menu.add(0, ID_COPY, 0, name).
+                        setOnMenuItemClickListener(handler).
+                        setAlphabeticShortcut('c');
+                    menu.setHeaderTitle(R.string.editTextMenuTitle);
+                }
+            }
+
+            return;
+        }
+
+        MenuHandler handler = new MenuHandler();
+
+        if (canSelectAll()) {
+            menu.add(0, ID_SELECT_ALL, 0,
+                    R.string.selectAll).
+                setOnMenuItemClickListener(handler).
+                setAlphabeticShortcut('a');
+        }
+
+        boolean selection = getSelectionStart() != getSelectionEnd();
+
+        if (canSelectText()) {
+            if (MetaKeyKeyListener.getMetaState(mText, META_SELECTING) != 0) {
+                menu.add(0, ID_STOP_SELECTING_TEXT, 0,
+                        R.string.stopSelectingText).
+                    setOnMenuItemClickListener(handler);
+            } else {
+                menu.add(0, ID_START_SELECTING_TEXT, 0,
+                        R.string.selectText).
+                    setOnMenuItemClickListener(handler);
+            }
+        }
+
+        if (canCut()) {
+            int name;
+            if (selection) {
+                name = R.string.cut;
+            } else {
+                name = R.string.cutAll;
+            }
+
+            menu.add(0, ID_CUT, 0, name).
+                setOnMenuItemClickListener(handler).
+                setAlphabeticShortcut('x');
+        }
+
+        if (canCopy()) {
+            int name;
+            if (selection) {
+                name = R.string.copy;
+            } else {
+                name = R.string.copyAll;
+            }
+
+            menu.add(0, ID_COPY, 0, name).
+                setOnMenuItemClickListener(handler).
+                setAlphabeticShortcut('c');
+        }
+
+        if (canPaste()) {
+            menu.add(0, ID_PASTE, 0, R.string.paste).
+                    setOnMenuItemClickListener(handler).
+                    setAlphabeticShortcut('v');
+        }
+
+        if (mText instanceof Spanned) {
+            int selStart = getSelectionStart();
+            int selEnd = getSelectionEnd();
+
+            int min = Math.min(selStart, selEnd);
+            int max = Math.max(selStart, selEnd);
+
+            URLSpan[] urls = ((Spanned) mText).getSpans(min, max,
+                                                        URLSpan.class);
+            if (urls.length == 1) {
+                menu.add(0, ID_COPY_URL, 0,
+                         R.string.copyUrl).
+                            setOnMenuItemClickListener(handler);
+            }
+        }
+        
+        // 重复行或选中的文本
+        menu.add(0, R.id.duplicate_line, 0, R.string.duplicate_line).setOnMenuItemClickListener(handler);
+        // 转为小写
+        menu.add(0, R.id.to_lower, 0, R.string.to_lower).setOnMenuItemClickListener(handler);
+        // 转为大写
+        menu.add(0, R.id.to_upper, 0, R.string.to_upper).setOnMenuItemClickListener(handler);
+        // 跳转到指定行
+        menu.add(0, R.id.go_to_begin, 0, R.string.go_to_begin).setOnMenuItemClickListener(handler);
+        // 跳转到指定行
+        menu.add(0, R.id.go_to_end, 0, R.string.go_to_end).setOnMenuItemClickListener(handler);
+        // 跳转到指定行
+        menu.add(0, R.id.goto_line, 0, R.string.goto_line).setOnMenuItemClickListener(handler);
+        
+        // 插入时间
+        menu.add(0, R.id.insert_datetime, 0, getResources().getString(R.string.insert_datetime)+TimeUtil.getDate()).setOnMenuItemClickListener(handler);
+
+        if(mHideSoftKeyboard)
+        {
+            // 显示输入法
+            menu.add(0, R.id.show_ime, 0, R.string.show_ime).setOnMenuItemClickListener(handler);
+        } else {
+            // 隐藏输入法
+            menu.add(0, R.id.hide_ime, 0, R.string.hide_ime).setOnMenuItemClickListener(handler);
+        }
+        //文档统计
+        menu.add(0, R.id.doc_stat, 0, R.string.doc_stat).setOnMenuItemClickListener(handler);
+        
+        menu.setHeaderTitle(R.string.editTextMenuTitle);
+        
+    }
+    
+    /**
+     * Called when a context menu option for the text view is selected.  Currently
+     * this will be one of: {@link android.R.id#selectAll},
+     * {@link android.R.id#startSelectingText}, {@link android.R.id#stopSelectingText},
+     * {@link android.R.id#cut}, {@link android.R.id#copy},
+     * {@link android.R.id#paste}, {@link android.R.id#copyUrl},
+     * or {@link android.R.id#switchInputMethod}.
+     */
+    public boolean onTextContextMenuItem(int id) {
+        int selStart = getSelectionStart();
+        int selEnd = getSelectionEnd();
+
+        if (!isFocused()) {
+            selStart = 0;
+            selEnd = mText.length();
+        }
+
+        int min = Math.min(selStart, selEnd);
+        int max = Math.max(selStart, selEnd);
+
+        if (min < 0) {
+            min = 0;
+        }
+        if (max < 0) {
+            max = 0;
+        }
+
+        ClipboardManager clip = (ClipboardManager)getContext()
+                .getSystemService(Context.CLIPBOARD_SERVICE);
+
+        switch (id) {
+            case ID_SELECT_ALL:
+                Selection.setSelection((Spannable) mText, 0,
+                        mText.length());
+                return true;
+
+            /*case ID_START_SELECTING_TEXT:
+                MetaKeyKeyListener.startSelecting(this, (Spannable) mText, selStart);
+                return true;
+
+            case ID_STOP_SELECTING_TEXT:
+                MetaKeyKeyListener.stopSelecting(this, (Spannable) mText);
+                Selection.setSelection((Spannable) mText, selEnd);
+                return true;*/
+
+            case ID_CUT:
+                //MetaKeyKeyListener.stopSelecting(this, (Spannable) mText);
+
+                if (min == max) {
+                    min = 0;
+                    max = mText.length();
+                }
+
+                clip.setText(mText.subSequence(min, max));
+                ((Editable) mText).delete(min, max);
+                return true;
+
+            case ID_COPY:
+                //MetaKeyKeyListener.stopSelecting(this, (Spannable) mText);
+
+                if (min == max) {
+                    min = 0;
+                    max = mText.length();
+                }
+
+                clip.setText(mText.subSequence(min, max));
+                return true;
+
+            case ID_PASTE:
+                //MetaKeyKeyListener.stopSelecting(this, (Spannable) mText);
+
+                CharSequence paste = clip.getText();
+
+                if (paste != null) {
+                    Selection.setSelection((Spannable) mText, max);
+                    ((Editable) mText).replace(min, max, paste);
+                }
+
+                return true;
+
+            case ID_COPY_URL:
+                //MetaKeyKeyListener.stopSelecting(this, (Spannable) mText);
+
+                URLSpan[] urls = ((Spanned) mText).getSpans(min, max,
+                                                       URLSpan.class);
+                if (urls.length == 1) {
+                    clip.setText(urls[0].getURL());
+                }
+                return true;
+            
+            case R.id.show_ime:
+                showIME(true);
+                break;
+            case R.id.hide_ime:
+                showIME(false);
+                break;
+            case R.id.to_lower:
+            case R.id.to_upper:
+                int start = getSelectionStart();
+                int end = getSelectionEnd();
+                if(start == end)
+                    break;
+                try
+                {
+                    Editable mText2 = getText();
+                    char[] dest = new char[end - start];
+                    mText2.getChars(start, end, dest, 0);
+                    if(id == R.id.to_lower)
+                    {
+                        mText2.replace(start, end, (new String(dest)).toLowerCase());
+                    }else
+                    {
+                        mText2.replace(start, end, (new String(dest)).toUpperCase());
+                    }
+                }catch (Exception e)
+                {
+                    //printException(e);
+                }
+                break;
+            case R.id.goto_line:
+                final EditText lineEditText = new EditText(getContext());
+                lineEditText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                builder.setTitle(R.string.goto_line).setView(lineEditText).setNegativeButton(android.R.string.cancel, null);
+                builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        try
+                        {
+                            CharSequence lineCharSequence = lineEditText.getText();
+                            int line = Integer.valueOf(lineCharSequence.toString());
+                            if(!gotoLine(line))
+                            {
+                                Toast.makeText(getContext(), R.string.can_not_gotoline, Toast.LENGTH_LONG).show();
+                            }else
+                            {
+                                dialog.dismiss();
+                            }
+                        }catch (Exception e)
+                        {
+                            //printException(e);
+                        }
+                    }
+                });
+                builder.show();
+            case R.id.go_to_begin:
+                setSelection(0, 0);
+                break;
+            case R.id.go_to_end:
+                int len = getText().length();
+                setSelection(len, len);
+                break;
+            case R.id.insert_datetime:
+                String text = TimeUtil.getDate();
+                getText().replace(min, max, text, 0, text.length());
+                break;
+            case R.id.duplicate_line:
+                CharSequence text2;
+                int offset;
+                if(selStart == selEnd)
+                {//重复行
+                    int s=selStart,e=selEnd;
+                    for(;--s>=0;)
+                    {
+                        if(mText.charAt(s) == '\n')
+                        {
+                            break;
+                        }
+                    }
+                    int textlen = mText.length();
+                    for(;e++<textlen;)
+                    {
+                        if(mText.charAt(e) == '\n')
+                        {
+                            break;
+                        }
+                    }
+                    if(s<0)s=0;
+                    if(e>=textlen)e=textlen-1;
+                    text2=mText.subSequence(s, e);
+                    offset=e;
+                } else {
+                    //重复选中的文本
+                    text2=mText.subSequence(min, max);
+                    offset=max;
+                }
+                getText().replace(offset, offset, text2, 0, text2.length());
+                break;
+            
+            case R.id.doc_stat:
+                Context context = getContext();
+                StringBuilder sb = new StringBuilder();
+                //match word
+                Matcher m = Pattern.compile( "\\w+" ).matcher( mText );
+                int i=0;
+                while ( m.find() ){
+                    i++;
+                }
+                
+                sb.append(context.getString(R.string.filename))
+                .append("\t\t").append(getPath()).append("\n\n")
+                //总长度
+                .append(context.getString(R.string.total_chars))
+                .append("\t\t").append(mText.length()).append("\n")
+                //总单词数
+                .append(context.getString(R.string.total_words))
+                .append("\t\t").append(i).append("\n")
+                //总行数
+                .append(context.getString(R.string.total_lines))
+                .append("\t\t").append(TextUtil.countMatches(mText, '\n', 0, mText.length()-1)+1);
+                
+
+                
+                new AlertDialog.Builder(context)
+                .setTitle(R.string.doc_stat)
+                .setMessage(sb.toString()).setPositiveButton(android.R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which)
+                            {
+                                dialog.dismiss();
+                            }
+                        }).show();
+                sb = null;
+            }
+        //调用TextView的选择文本功能
+        return super.onTextContextMenuItem(id);
+    }
+    
+    private static final int META_SELECTING = 1 << 16;
+    private static final int ID_SELECT_ALL = android.R.id.selectAll;
+    private static final int ID_START_SELECTING_TEXT = android.R.id.startSelectingText;
+    private static final int ID_STOP_SELECTING_TEXT = android.R.id.stopSelectingText;
+    private static final int ID_CUT = android.R.id.cut;
+    private static final int ID_COPY = android.R.id.copy;
+    private static final int ID_PASTE = android.R.id.paste;
+    private static final int ID_COPY_URL = android.R.id.copyUrl;
+
+    private class MenuHandler implements MenuItem.OnMenuItemClickListener {
+        public boolean onMenuItemClick(MenuItem item) {
+            return onTextContextMenuItem(item.getItemId());
+        }
+    }
+    
+    public static void setHideKeyboard(boolean bool)
+    {
+        mHideSoftKeyboard = bool;
     }
 
 }

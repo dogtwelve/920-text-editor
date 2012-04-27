@@ -22,6 +22,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.preference.PreferenceManager;
+import android.text.SpannableString;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -76,6 +77,8 @@ public class TabHost extends LinearLayout
     private OnTabCloseListener mOnTabCloseListener;
     
     private OnTextChangedListener mOnTextChangedListener = null;
+    //是否自动创建tab
+    public static boolean autoNewTab = true;
 
     public void setOnTextChangedListener(OnTextChangedListener l)
     {
@@ -118,16 +121,24 @@ public class TabHost extends LinearLayout
             }
         });
     }
+    
+    private TextView getTabTitleView()
+    {
+        if(mCurrentTab < 0)
+            return null;
+        View mView = mTabWidget.getChildTabViewAt(mCurrentTab);
+        if(mView == null)
+            return null;
+        return (TextView)mView.findViewById(R.id.title);
+    }
 
     public void setTitle(String title)
     {
-        if(mCurrentTab < 0)
+        TextView mTitleView = getTabTitleView();
+        if(mTitleView == null)
             return;
-        View mView = mTabWidget.getChildTabViewAt(mCurrentTab);
-        if(mView == null)
-            return;
-        TextView mTitleView = (TextView)mView.findViewById(R.id.title);
         mTitleView.setText(title);
+        mTabSpecs.get(mCurrentTab).setTitle(title);
     }
 
     /**
@@ -169,9 +180,9 @@ public class TabHost extends LinearLayout
                         mOnTabChangeListener.onTabChanged(tabIndex);
                 } else {
                     //关闭当前标签
-                    if(mOnTabCloseListener != null && mOnTabCloseListener.onTabClose(tabIndex))
+                    if(mOnTabCloseListener != null)
                     {
-                        closeTab(tabIndex);
+                        mOnTabCloseListener.onTabClose(TabWidget.MENU_ACTION_CLOSE_ONE, tabIndex, tabIndex);
                     }
                 }
             }
@@ -184,9 +195,10 @@ public class TabHost extends LinearLayout
         mTabContent.addView(jet);
         
         setCurrentTab(mTabSpecs.size() - 1);
+        setTitle(getResources().getString(R.string.new_filename));
     }
     
-    public void closeTab(int tabId)
+    public int closeTab(int tabId)
     {
         mTabWidget.removeViewAt(tabId);
         mTabContent.removeView(mTabSpecs.get(tabId));
@@ -197,7 +209,8 @@ public class TabHost extends LinearLayout
             if(mTabWidget.getTabCount() == 0)
             {
                 mCurrentTab = -1;
-                addTab("");
+                if(autoNewTab)
+                    addTab("");
             } else {
                 mCurrentTab = -1;
                 setCurrentTab(0);
@@ -206,10 +219,10 @@ public class TabHost extends LinearLayout
         } else {
             setCurrentTab(--tabId);
         }
-        
+        return mCurrentTab;
     }
 
-    public void setEditTextPref(JecEditText mEditText)
+    private void setEditTextPref(JecEditText mEditText)
     {
         SharedPreferences mPref = PreferenceManager.getDefaultSharedPreferences(mJecEditor);
         String font = mPref.getString("font", "Monospace");
@@ -233,6 +246,23 @@ public class TabHost extends LinearLayout
         mEditText.setTextColor(Color.parseColor(ColorScheme.color_font));
         mEditText.init();
     }
+    
+    public void setTabStatus(boolean ischanged)
+    {
+        TextView mTitleView = getTabTitleView();
+        if(mTitleView == null)
+            return;
+        CharSequence text = (CharSequence) mTitleView.getText();
+        if(!ischanged)
+        {
+            mTitleView.setText(text.toString());
+            return;
+        }
+        SpannableString span = new SpannableString(text);
+        ForegroundColorSpan fcs = new ForegroundColorSpan(Color.RED);
+        span.setSpan(fcs, 0, text.length(), SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
+        mTitleView.setText(span);
+    }
 
     private JecEditText createEditText()
     {
@@ -247,6 +277,7 @@ public class TabHost extends LinearLayout
             {
                 if(mOnTextChangedListener != null)
                     mOnTextChangedListener.onTextChanged(mEditText);
+                setTabStatus(mEditText.isTextChanged());
             }
         });
         return mEditText;
@@ -256,8 +287,7 @@ public class TabHost extends LinearLayout
     {
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View tabIndicator = inflater.inflate(R.layout.tab_indicators, mTabWidget, false);
-        final TextView tv = (TextView) tabIndicator.findViewById(R.id.title);
-        tv.setText(getResources().getString(R.string.new_filename));
+        //TextView tv = (TextView) tabIndicator.findViewById(R.id.title);
 
         return tabIndicator;// .findViewById(R.id.tab_indicator_layout);
     }
@@ -329,11 +359,12 @@ public class TabHost extends LinearLayout
     public interface OnTabCloseListener
     {
         /**
-         * 返回true则关闭当前标签，否则当做放弃
-         * @param tabId 要关闭的标签索引位置
-         * @return true|false
+         * 安全地关闭标签
+         * @param action
+         * @param startIndex 触发动作时的标签位置
+         * @param curIndex 当前标签位置
          */
-        boolean onTabClose(int tabId);
+        public void onTabClose(int action, int startIndex, int curIndex);
     }
     
     public void setOnTabCloseListener(OnTabCloseListener l)
@@ -382,26 +413,44 @@ public class TabHost extends LinearLayout
         });
     }
     
+    public int getTabCount()
+    {
+        return mTabWidget.getTabCount();
+    }
+    
+    public void setAutoNewTab(boolean newtab)
+    {
+        autoNewTab = newtab;
+    }
+    
+    public void iterCloseTab(int action, int index, int count)
+    {
+        //int count = mTabWidget.getTabCount();
+        int start = action==TabWidget.MENU_ACTION_CLOSE_RIGHT ? index+1 : 0;
+
+        while(--count >= start)
+        {
+            if(action == TabWidget.MENU_ACTION_CLOSE_OTHER && count==index)
+                continue;
+            if(mOnTabCloseListener != null)
+            {
+                mOnTabCloseListener.onTabClose(action, index, count);
+            }
+            break;
+        }
+        /*if(autoNewTab && mTabWidget.getTabCount() < 1)
+        {
+            addTab("");
+        }*/
+    }
+
     private OnMenuClickListener mOnMenuClickListener = new OnMenuClickListener() {
         
         @Override
         public void onMenuClick(int action, int index)
         {
-            int count = mTabWidget.getTabCount();
-            int start = action==TabWidget.MENU_ACTION_CLOSE_RIGHT ? index+1 : 0;
-            while(--count >= start)
-            {
-                if(action == TabWidget.MENU_ACTION_CLOSE_OTHER && count==index)
-                    continue;
-                if(mOnTabCloseListener != null && mOnTabCloseListener.onTabClose(count))
-                {
-                    closeTab(count);
-                }
-            }
-            if(mTabWidget.getTabCount() < 1)
-            {
-                addTab("");
-            }
+            autoNewTab = true;
+            iterCloseTab(action, index, mTabWidget.getTabCount());
         }
     };
     
