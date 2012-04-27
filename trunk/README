@@ -3,7 +3,7 @@
 Features: 
 1. Multi Tab, you can open different files in different tabs to facilitate you in a different text of this switch to edit
 2. syntax highlighting: 
-    ASP, ActionScript, C/C++, C#, Erlang, Frink, HTML/XML/WML, CSS, Javascript, Java, JSP, Perl, PHP, Python, Shell/Bash, Lua, SQL, VB/VBS, Tcl, TeX/LaTeX, Verilog, AutoHotKey, AutoLisp, PowerShell, Pascal
+    ASP, ActionScript, C/C++, C#, Erlang, Frink, HTML/XML/WML, CSS, Javascript, Java, JSP, Perl, PHP, Python, Shell/Bash, Lua, SQL, VB/VBS, Tcl, TeX/LaTeX, Verilog, AutoHotKey, AutoLisp, PowerShell, Pascal, Fortran, ColdFusion, VHDL
 3. show line numbers
 4. show blank characters (tabs, line breaks) 
 5. automatically detects the open file encoding, and you can also convert the current file encoding support: 

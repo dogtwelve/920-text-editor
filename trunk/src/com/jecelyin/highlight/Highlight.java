@@ -106,7 +106,7 @@ public class Highlight
      */
     public boolean render(Editable mText, int startOffset, int endOffset)
     {
-        if(!mEnabled)
+        if(!mEnabled || langTab == null)
             return false;
 
         if(this.mStop || "".equals(this.mExt))

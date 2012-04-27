@@ -55,6 +55,7 @@ public class TabWidget extends LinearLayout {
     private int mMenuCurrentIndex;
     private OnMenuClickListener mOnMenuClickListener;
     
+    public static final int MENU_ACTION_CLOSE_ONE = 0;
     public static final int MENU_ACTION_CLOSE_OTHER = 1;
     public static final int MENU_ACTION_CLOSE_RIGHT = 2;
     public static final int MENU_ACTION_CLOSE_ALL = 3;

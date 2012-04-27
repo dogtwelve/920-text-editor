@@ -1,3 +1,14 @@
+Version 12.4.25
+    *) Feature: Add "Duplicate Line Or Selected text" menu
+    *) Feature: Add Fortran, ColdFusion, VHDL syntax highlighting
+    *) Feature: Add "Document Statistics" menu
+
+    *) Change: Add a color indicator for the document Tab
+
+    *) Bug Fix: Open multiple documents, one document has to change and switch to other Tab, and then exit the app, not prompted to save
+    *) Bug Fix: Fixed some of the phone, context menu is no copy, cut, paste menu
+    *) Bug Fix: The same as the length of the text, but the document changes, not prompted to save
+
 Version 12.3.27
     *) Bug Fix: fixed click on the text area under the 4.0 system crash bug
 

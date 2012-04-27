@@ -3,7 +3,7 @@
 特色功能:
 1. 多标签，你可以在不同的标签打开不同的文件，方便你在不同的文本之本切换编辑
 2. 语法高亮:
-    ASP, ActionScript, C/C++, C#, Erlang, Frink, HTML/XML/WML, CSS, Javascript, Java, JSP, Perl, PHP, Python, Shell/Bash, Lua, SQL, VB/VBS, Tcl, TeX/LaTeX, Verilog, AutoHotKey, AutoLisp, PowerShell, Pascal
+    ASP, ActionScript, C/C++, C#, Erlang, Frink, HTML/XML/WML, CSS, Javascript, Java, JSP, Perl, PHP, Python, Shell/Bash, Lua, SQL, VB/VBS, Tcl, TeX/LaTeX, Verilog, AutoHotKey, AutoLisp, PowerShell, Pascal, Fortran, ColdFusion, VHDL
 3. 显示行号
 4. 显示空白字符（制表符，换行符）
 5. 自动检测打开的文件编码，同时你也可以转换当前文件编码，支持:
